@@ -169,7 +169,7 @@ def process_images(p):
             filename, file_ext = os.path.splitext(file)
             # = file.split('.')[1]
             
-            print(f"> Analyzing image {file} with extension: {file_ext}")
+
             
             if file_ext == '.tif' or file_ext == '.tiff':
                 im = imread(file)
@@ -177,12 +177,16 @@ def process_images(p):
                 im = np.load(file)
 
             if p["convert"]:
-                output_file = file.split('.')[0] 
-                if file_ext == 'tif' or file_ext == 'tiff':
+                output_file = filename
+                print(f"> Converting {filename} with extension: {file_ext}")
+                if file_ext == '.tif' or file_ext == '.tiff':
                     np.save(output_file+'.npy', im)         
-                elif file_ext == 'npy':
+                    print(f"> Saved 3D image as \n\t--> {filename}.npy")
+                elif file_ext == '.npy':
                     imsave(output_file+'.tif', im)
-                print(f"> Saved 3D image as \n\t--> {output_file}")
+                    print(f"> Saved 3D image as \n\t--> {filename}.tif")
+
+            print(f"> Analyzing image {file} with extension: {file_ext}")
             
             # removes small masks
             im_clean = remove_small_masks(im, num_pixels_min = p["num_pixels_min"], z_min = p['z_min'], z_max = p['z_max'])
@@ -194,10 +198,10 @@ def process_images(p):
             save_projections(file, im_2d)
             
             if p["save"]:
-                output_file = file.split('.')[0] + "_filtered" + '.' + file_ext                                     
-                if file_ext == 'tif' or file_ext == 'tiff':
+                output_file = filename + "_filtered" + '.' + file_ext                                     
+                if file_ext == '.tif' or file_ext == '.tiff':
                     imsave(output_file, im_clean)
-                elif file_ext == 'npy':
+                elif file_ext == '.npy':
                     np.save(output_file, im_clean)         
                 print(f"> Saved 3D image as \n\t--> {output_file}")
    else:
