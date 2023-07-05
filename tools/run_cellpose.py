@@ -22,7 +22,6 @@ import argparse
 
 def parseArguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-F", "--rootFolder", help="Folder with images")
     parser.add_argument("--input", help="Name of input trace file.")
     parser.add_argument("--cellprob", help="cellprob threshold. Default = -8.")
     parser.add_argument("--flow", help="flow threshold. Default = 10.")
@@ -33,10 +32,6 @@ def parseArguments():
     p = {}
 
     args = parser.parse_args()
-    if args.rootFolder:
-        p["rootFolder"] = args.rootFolder
-    else:
-        p["rootFolder"] = "."
 
     if args.input:
         p["input"] = args.input

@@ -28,7 +28,6 @@ import sys
 
 def parseArguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-F", "--rootFolder", help="Folder with images")
     parser.add_argument("--input", help="Name of input trace file.")
     parser.add_argument("--N_channels", help="Number of channels in image.")
     parser.add_argument("--pipe", help="inputs Trace file list from stdin (pipe)", action="store_true")
@@ -36,10 +35,7 @@ def parseArguments():
     p = {}
 
     args = parser.parse_args()
-    if args.rootFolder:
-        p["rootFolder"] = args.rootFolder
-    else:
-        p["rootFolder"] = "."
+
 
     if args.input:
         p["input"] = args.input

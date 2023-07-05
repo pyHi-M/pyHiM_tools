@@ -4,16 +4,55 @@
 Created on Tue Jul  4 13:26:12 2023
 
 @author: marcnol
+
+known problems with scikit-image<0.19:
+    
+    AttributeError: '<class 'skimage.measure._regionprops.RegionProperties'>' object has no attribute 'equivalent_diameter_area'
+
+    solve by:
+    
+    $ conda install -c anaconda scikit-image
 """
-from tifffile import imread, imsave
+from tifffile import imread
 from matplotlib.pylab import plt
 import matplotlib
 import numpy as np
 from skimage.measure import regionprops
+import sys
+import select
+import argparse
+import os
 
 font = {"weight": "normal", "size": 22}
 
 matplotlib.rc("font", **font)
+
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", help="Name of input trace file.")
+    parser.add_argument("--pipe", help="inputs Trace file list from stdin (pipe)", action="store_true")
+
+    p = {}
+
+    args = parser.parse_args()
+
+    if args.input:
+        p["input"] = args.input
+    else:
+        p["input"] = None
+
+    p["files"] = []
+    if args.pipe:
+        p["pipe"] = True
+        if select.select([sys.stdin,], [], [], 0.0)[0]:
+            p["files"] = [line.rstrip("\n") for line in sys.stdin]
+        else:
+            print("Nothing in stdin")
+    else:
+        p["pipe"] = False
+        p["files"] = [p["input"]]
+
+    return p
 
 def plots(datasets,xlabels,ylabels,titles):
 
@@ -92,19 +131,32 @@ def process_images(files=list()):
             
             im = imread(file)
             
-            output = file.split('.')[0] + '_z_mask_distribution' + '.png'
+            output = file.split('.')[0] + '_mask_stats' + '.png'
 
             analyze_masks_z(im,output=output) 
               
-            print(f"\n>>> Image saved: {output}")               
+            print(f"\n>>> Analysis saved: {output}")               
 
    else:
        print("! Error: did not find any file to analyze. Please provide one using --input or --pipe.")
        
+# =============================================================================
+# MAIN
+# =============================================================================
 
 
-file = '/mnt/grey/DATA/rawData_2023/Experiment_58_Marie_Christophe_Christel_fly_embryo_wt/DAPI_tiff/denoised/' + 'scan_001_DAPI_001_ROI_nuclei_denoised_cp_masks.tif'
+def main():
 
-files=[file]
+    # [parsing arguments]
+    p = parseArguments()
 
-process_images(files)
+    print("Remember to activate environment: conda activate aydin!\n")
+
+    # [loops over lists of datafolders]
+    process_images(files = p['files'],)
+        
+    print("Finished execution")
+
+if __name__ == "__main__":
+    main()       
+    
