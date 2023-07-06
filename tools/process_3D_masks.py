@@ -198,7 +198,7 @@ def process_images(p):
             save_projections(file, im_2d)
             
             if p["save"]:
-                output_file = filename + "_filtered" + '.' + file_ext                                     
+                output_file = filename + "_filtered" +  file_ext                                     
                 if file_ext == '.tif' or file_ext == '.tiff':
                     imsave(output_file, im_clean)
                 elif file_ext == '.npy':
