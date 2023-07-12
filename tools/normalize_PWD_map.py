@@ -132,7 +132,7 @@ def run_process(file_name='',genomic_distance_map='', file_barcodes='',file_outp
 
     # calculates contact map and normalizes it
     contact_map = PWD_map<distance_threshold
-    contact_map_flat  = np.nansum(contact_map,axis=2, dtype=np.float) # /contact_map.shape[2]
+    contact_map_flat  = np.nansum(contact_map,axis=2, dtype=float) # /contact_map.shape[2]
     for i, barcode1 in enumerate(unique_barcodes):
         for j, barcode2 in enumerate(unique_barcodes):
             if i != j:

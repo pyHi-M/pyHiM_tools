@@ -1,6 +1,13 @@
 # pyHiM_tools
 
 #### deinterleave_channels.py
+
+Example:
+```
+$ ls *tif | deinterleave_channels.py --N_channels 2 --pipe
+```
+
+Usage:
 ```sh
 usage: deinterleave_channels.py [-h] [--input INPUT] [--N_channels N_CHANNELS] [--pipe]
 
@@ -25,6 +32,13 @@ optional arguments:
 ### denoising
 
 #### run_aydin.py
+
+Example:
+```
+$ ls *ch00.tif | run_aydin.py --pipe
+```
+
+Usage:
 ```sh
 usage: run_aydin.py [-h] [--input INPUT] [--dict_path DICT_PATH] [--pipe]
 
@@ -42,6 +56,12 @@ optional arguments:
 
 #### run_cellpose.py
 
+Example:
+```
+$ ls *_denoised.tif | run_cellpose --pipe
+```
+
+Usage:
 ```sh
 usage: run_cellpose.py [-h] [--input INPUT] [--cellprob CELLPROB] [--flow FLOW] [--stitch STITCH] [--diam DIAM] [--pipe]
 
