@@ -94,3 +94,71 @@ optional arguments:
 `loadDir.pml`
 `loadDir.py`
 
+### post-processing matrices
+
+**to get the genomic distance map:**
+
+This script loads
+    -a BED file with the coordinates of barcodes
+    -a CSV file with unique barcodes
+
+from this it creates a matrix of genomic distances that are exported as PNG and as NPY
+
+Example:
+
+```sh
+$ get_genomic_distance_map.py --barcodes_file_path uniqueBarcodes.ecsv --bed_file_path 3R_All_barcodes.bed
+```
+
+```
+usage: get_genomic_distance_map.py [-h] [--barcodes_file_path BARCODES_FILE_PATH] [--bed_file_path BED_FILE_PATH]
+                                   [--file_output FILE_OUTPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --barcodes_file_path BARCODES_FILE_PATH
+                        Name of input barcode list, in csv format.
+  --bed_file_path BED_FILE_PATH
+                        Name of input barcode coordinates file, in bed format.
+  --file_output FILE_OUTPUT
+                        Name of output files.
+```
+
+**to normalize the proximity map by genomic distance:**
+
+This script loads
+    -a list of PWD maps in NPY format
+    -a genomic distance map based on a list of barcodes, generated using `get_barcode_normalisation_map.py`
+    -a CSV file with uniquebarcodes
+
+from this it:
+    - calculates the proximity frequency map
+    - normalizes it by the number of times two barcodes are found in a trace
+    - calculates the power law decay of proximity with genomic distance
+    - constructs the expected proximity map
+    - gets the observed/expected proximity map
+
+Example:
+```sh
+$ normalize_PWD_map.py --input merged_traces_Matrix_PWDscMatrix.npy --genomic_distance_map genomic_distance_map.npy --uniqueBarcodes uniqueBarcodes.ecsv
+```
+
+```
+usage: normalize_PWD_map.py [-h] [--genomic_distance_map GENOMIC_DISTANCE_MAP] [--input INPUT]
+                            [--file_output FILE_OUTPUT] [--proximity_threshold PROXIMITY_THRESHOLD]
+                            [-U UNIQUEBARCODES]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --genomic_distance_map GENOMIC_DISTANCE_MAP
+                        Name of genomic distance matrix, in NPY format.
+  --input INPUT         Name of input PWD maps, in NPY format.
+  --file_output FILE_OUTPUT
+                        Name of output files.
+  --proximity_threshold PROXIMITY_THRESHOLD
+                        proximity threshold in um
+  -U UNIQUEBARCODES, --uniqueBarcodes UNIQUEBARCODES
+                        csv file with list of unique barcodes
+```
+
+

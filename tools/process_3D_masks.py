@@ -168,9 +168,7 @@ def process_images(p):
   
             filename, file_ext = os.path.splitext(file)
             # = file.split('.')[1]
-            
-
-            
+                        
             if file_ext == '.tif' or file_ext == '.tiff':
                 im = imread(file)
             elif file_ext == '.npy':
