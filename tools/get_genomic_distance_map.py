@@ -21,6 +21,7 @@ def parseArguments():
     parser.add_argument("--barcodes_file_path", help="Name of input barcode list, in csv format.")
     parser.add_argument("--bed_file_path", help="Name of input barcode coordinates file, in bed format.")
     parser.add_argument("--file_output", help="Name of output files.")
+    parser.add_argument("--shift_barcode_number", help="Shift between barcode names in BED file and barcode list.")
 
     p = {}
 
@@ -41,6 +42,10 @@ def parseArguments():
     else:
         p["file_output"] = "genomic_distance_map" 
 
+    if args.shift_barcode_number:
+        p["shift_barcode_number"] = int(args.shift_barcode_number)
+    else:
+        p["shift_barcode_number"] = 0
     return p
     
 
@@ -72,7 +77,7 @@ def parse_bed_file(file_path):
     return bed_dict
 
 
-def run_process(barcodes_file_path='',bed_file_path='',file_output=''):
+def run_process(barcodes_file_path='',bed_file_path='',file_output='',shift_barcode_number=0):
     # reads BED and creates dict
     barcode_dict = parse_bed_file(bed_file_path)
     
@@ -83,7 +88,7 @@ def run_process(barcodes_file_path='',bed_file_path='',file_output=''):
     # gets coordinates from each barcode
     barcode_unique_dict = {}
     for barcode in unique_barcodes:
-        barcode_str='barcode_'+str(barcode)
+        barcode_str='barcode_'+str(barcode-shift_barcode_number)
         start_seq = int(barcode_dict[barcode_str][0]['start'])
         end_seq = int(barcode_dict[barcode_str][0]['end'])
         barcode_unique_dict[str(barcode)]=int((end_seq+start_seq)/2)
@@ -114,13 +119,15 @@ def main():
     barcodes_file_path = p["barcodes_file_path"]
     bed_file_path = p["bed_file_path"]
     file_output = p["file_output"]
-
+    shift_barcode_number = p["shift_barcode_number"]
+    
     print(f"$ input parameters: input \nbarcodes file: {barcodes_file_path}\nBED file: {bed_file_path}")
 
     if os.path.exists(p["barcodes_file_path"]) and os.path.exists(p["bed_file_path"]):
         run_process(barcodes_file_path=barcodes_file_path,
                     bed_file_path=bed_file_path,
-                    file_output=file_output)
+                    file_output=file_output,
+                    shift_barcode_number=shift_barcode_number)
     else:
         print(f"! Error: input files do not exist !\n{barcodes_file_path}\n{bed_file_path}")
 
