@@ -172,6 +172,7 @@ def plot_map(matrix=np.array,
         plt.clim(v_min, v_max)
 
     plt.savefig(file_output+tag+'.png')
+    plt.savefig(file_output+tag+'.svg')
     np.save(file_output+tag+'.npy',matrix)  
 
 def calculates_power_law(contact_map_flat=np.array,
@@ -208,6 +209,7 @@ def calculates_power_law(contact_map_flat=np.array,
     plt.legend()
     plt.title("Fit to power law")
     plt.savefig(file_output+'_power_law_fit'+'.png')
+    plt.savefig(file_output+'_power_law_fit'+'.svg')
     
     return a_fit, b_fit
 
