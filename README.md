@@ -181,4 +181,23 @@ optional arguments:
                         csv file with list of unique barcodes
 ```
 
+### compare multiple NPY matrices using pearson correlation
+
+The script `` can compare two matrices. But it is annoying having to call it several times to compare multiple datasets. For this I developed ``.
+The datasets to be compared are sent by piping. The dataset that all datasets are compared against are sent by the argument --input. See example below:
+
+```
+usage: run_multiple_correlations.py [-h] [-I INPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -I INPUT, --input INPUT
+                        Input file against which all files should be compared to
+```
+
+Example
+```
+$ ls Trace*PWDscMatrix.npy | python -m run_multiple_correlations.py --input merged_traces_Matrix_PWDscMatrix.npy
+```
+
 
