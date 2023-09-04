@@ -29,17 +29,23 @@ matplotlib.rc("font", **font)
 
 def parseArguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", help="Name of input trace file.")
+    parser.add_argument("--input", help="Name of input file.")
+    parser.add_argument("--output", help="Name of output dataset file name.")
     parser.add_argument("--pipe", help="inputs Trace file list from stdin (pipe)", action="store_true")
 
-    p = {}
-
     args = parser.parse_args()
+
+    p = {}
 
     if args.input:
         p["input"] = args.input
     else:
         p["input"] = None
+
+    if args.output:
+        p["output_dataset"] = args.output
+    else:
+        p["output_dataset"] = None
 
     p["files"] = []
     if args.pipe:
@@ -69,7 +75,7 @@ def plots(datasets,xlabels,ylabels,titles):
         axis.set_ylabel(ylabel)   
         axis.set_title(title)
         
-def analyze_masks_z(im,output = 'tmp.png'):
+def analyze_masks_z(im,output = 'tmp.png', output_dataset = None):
 
     print('> Analyzing mask in z ... ')
 
@@ -85,13 +91,14 @@ def analyze_masks_z(im,output = 'tmp.png'):
     titles.append('z-axis masks distribution')
 
     # area equivalent_diameter_area
-    min_area,max_area,mean_equivalent_diameter_area = list(), list(), list()
+    min_area,max_area,mean_equivalent_diameter_area, all_areas = list(), list(), list(), list()
     for plane in range(N_planes):
         region = regionprops(im[plane,:,:])
         areas, equivalent_diameter_areas =[], []
         for idx in range(len(region)):
             areas.append(region[idx].area)
             equivalent_diameter_areas.append(region[idx].equivalent_diameter_area)
+            all_areas.append(region[idx].equivalent_diameter_area)
         min_area.append(np.min(areas))
         max_area.append(np.max(equivalent_diameter_areas))
         mean_equivalent_diameter_area.append(np.mean(equivalent_diameter_areas))
@@ -101,7 +108,7 @@ def analyze_masks_z(im,output = 'tmp.png'):
     ylabels.append('mean diameter, px')
     titles.append('mean diam distribution')
 
-    datasets.append(min_area)
+    # datasets.append(min_area)
     xlabels.append('z, planes')
     ylabels.append('min area, px')
     titles.append('min area distribution')
@@ -113,12 +120,16 @@ def analyze_masks_z(im,output = 'tmp.png'):
         
     # plots
     plots(datasets,xlabels,ylabels,titles)
-
     plt.savefig(output)
 
+    # saves output datasets for further processing
+    if output_dataset is not None:
+        datasets.append(all_areas)
+        output_data_filename = output+"_"+output_dataset+'.npz'
+        np.savez(output_data_filename,datasets)
+        print(f"$ output data saved to: {output_data_filename}")
         
-def process_images(files=list()):
-
+def process_images(files=list(), output_dataset = None):
 
    if len(files) > 0 and files[0] is not None:
 
@@ -133,7 +144,7 @@ def process_images(files=list()):
             
             output = file.split('.')[0] + '_mask_stats' + '.png'
 
-            analyze_masks_z(im,output=output) 
+            analyze_masks_z(im,output=output, output_dataset = output_dataset ) 
               
             print(f"\n>>> Analysis saved: {output}")               
 
@@ -153,7 +164,7 @@ def main():
     print("Remember to activate environment: conda activate aydin!\n")
 
     # [loops over lists of datafolders]
-    process_images(files = p['files'],)
+    process_images(files = p['files'],output_dataset =p['output_dataset'])
         
     print("Finished execution")
 
