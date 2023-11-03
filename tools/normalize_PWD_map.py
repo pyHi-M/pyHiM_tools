@@ -227,22 +227,30 @@ def run_process(file_name='',
     unique_barcodes = list(np.loadtxt(file_barcodes, delimiter=" "))
     unique_barcodes = [int(x) for x in unique_barcodes]
     N_barcodes = len(unique_barcodes)
+    print(f"$ Number of barcodes loaded: {N_barcodes}")
     
     # loads genomic_distance_map
     gen_dist_matrix = np.load(genomic_distance_map)
 
     # loads PWD map
     PWD_map = np.load(file_name)
-
+    n_barcodes_map, _, n_traces = PWD_map.shape
+    
+    print(f"$ Loaded {n_traces} traces, for {n_barcodes_map} barcodes")
+    
+    if n_barcodes_map != N_barcodes:
+        print(f"! Error: the number of barcodes in uniqueBarcodes is not the same as that in the matrix!")
+        return
+    
     # calculates contact map and normalizes it
     contact_map = PWD_map<distance_threshold
     contact_map_flat  = np.nansum(contact_map,axis=2, dtype=float) # /contact_map.shape[2]
-    n_cells = PWD_map.shape[2]
+    # n_cells = PWD_map.shape[2]
     for i, barcode1 in enumerate(unique_barcodes):
         for j, barcode2 in enumerate(unique_barcodes):
             if i != j:
                 if norm == 'n_cells':
-                    contact_map_flat[i,j] = contact_map_flat[i,j]/n_cells
+                    contact_map_flat[i,j] = contact_map_flat[i,j]/n_traces
                 elif norm == 'nonNANs':
                     contact_map_flat[i,j] = contact_map_flat[i,j]/np.count_nonzero(~np.isnan(PWD_map[i,j,:]))
             else:
