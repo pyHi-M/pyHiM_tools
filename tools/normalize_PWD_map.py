@@ -158,7 +158,7 @@ def plot_map(matrix=np.array,
 
     fig = plt.figure(figsize=(15, 15))
 
-    pos = plt.imshow(matrix, cmap='coolwarm')
+    pos = plt.imshow(matrix, cmap='RdBu_r')
     plt.xticks(np.arange(len(unique_barcodes)), unique_barcodes)
     plt.yticks(np.arange(len(unique_barcodes)), unique_barcodes)
     plt.title(" ".join(tag.split("_")))
