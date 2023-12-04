@@ -15,7 +15,7 @@ from this it creates a matrix of genomic distances that are exported as PNG and 
 import numpy as np
 import matplotlib.pylab as plt
 import argparse
-import os
+import os, sys
 def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--barcodes_file_path", help="Name of input barcode list, in csv format.")
@@ -51,7 +51,7 @@ def parseArguments():
 
 def parse_bed_file(file_path):
     bed_dict = {}
-
+    
     with open(file_path, 'r') as bed_file:
         for line in bed_file:
             if line.startswith('#'):
@@ -60,20 +60,29 @@ def parse_bed_file(file_path):
             fields = line.strip().split('\t')
         
             chromosome = fields[0]
-            start = int(fields[1])
-            end = int(fields[2])
-            feature_name = fields[3]
+            keep_reading=True
+            try:
+                start = int(fields[1])
+            except IndexError:
+                keep_reading=False
+            
+            if keep_reading:
+                end = int(fields[2])
+                feature_name = fields[3]
+    
+                # Create a dictionary entry for the feature
+                if feature_name not in bed_dict:
+                    bed_dict[feature_name] = []
+    
+                bed_dict[feature_name].append({
+                    'start': start,
+                    'end': end,
+                    'chromosome': chromosome
+                })
+            else:
+                print('>> Skipping header!')
 
-            # Create a dictionary entry for the feature
-            if feature_name not in bed_dict:
-                bed_dict[feature_name] = []
-
-            bed_dict[feature_name].append({
-                'start': start,
-                'end': end,
-                'chromosome': chromosome
-            })
-
+    print(f"$ Assigned {len(bed_dict)} keys: {bed_dict.keys()}")
     return bed_dict
 
 
@@ -88,8 +97,13 @@ def run_process(barcodes_file_path='',bed_file_path='',file_output='',shift_barc
     # gets coordinates from each barcode
     barcode_unique_dict = {}
     for barcode in unique_barcodes:
-        barcode_str='barcode_'+str(barcode-shift_barcode_number)
-        start_seq = int(barcode_dict[barcode_str][0]['start'])
+        barcode_str=str(barcode-shift_barcode_number)
+        try:
+            start_seq = int(barcode_dict[barcode_str][0]['start'])
+        except KeyError:
+            print(f'ERROR: Barcode <{barcode_str}> not found in BED file!')
+            print(f'$ The barcode name in <{bed_file_path}> should be the same as in <{barcodes_file_path}> ;)')
+            sys.exit(-1)
         end_seq = int(barcode_dict[barcode_str][0]['end'])
         barcode_unique_dict[str(barcode)]=int((end_seq+start_seq)/2)
         
