@@ -119,8 +119,10 @@ optional arguments:
 **to get the genomic distance map:**
 
 This script loads
-    -a BED file with the coordinates of barcodes
+    -a BED file with the coordinates of barcodes. 
     -a CSV file with unique barcodes
+
+**The names of the barcodes in the BED file HAVE TO BE the same as in the CSV file.**
 
 from this it creates a matrix of genomic distances that are exported as PNG and as NPY
 
