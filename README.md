@@ -116,11 +116,11 @@ optional arguments:
 
 ### post-processing matrices
 
-**to get the genomic distance map:**
+#### 1. to get the genomic distance map
 
 This script loads
-    -a BED file with the coordinates of barcodes. 
-    -a CSV file with unique barcodes
+1. a BED file with the coordinates of barcodes. 
+2. a CSV file with unique barcodes
 
 **The names of the barcodes in the BED file HAVE TO BE the same as in the CSV file.**
 
@@ -146,7 +146,7 @@ optional arguments:
                         Name of output files.
 ```
 
-**to normalize the proximity map by genomic distance:**
+#### 2. to normalize the proximity map by genomic distance
 
 This script loads
     -a list of PWD maps in NPY format
