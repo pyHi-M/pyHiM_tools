@@ -118,7 +118,7 @@ def read_arguments():
     if args.partition:
         run_parameters["partition"] = args.partition
     else:
-        run_parameters["partition"] = "muse-visu"
+        run_parameters["partition"] = "defq"
 
     if args.nodelist:
         run_parameters["nodelist"] = args.nodelist
