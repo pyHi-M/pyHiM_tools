@@ -261,9 +261,9 @@ def main():
         job_name = os.path.basename(folder) + jobNameExt
 
         print(f"Folder to run: {folder}")
-        print(f"Output logfile: {output_file}")
+        # print(f"Output logfile: {output_file}")
 
-        pyHiM = "pyHiM.py -F " + folder + CMD + threads + " > " + output_file
+        pyHiM = "pyHiM.py -F " + folder + CMD + threads 
 
         if not run_parameters["sbatch"]:
             pyHiM = pyHiM + " &"
