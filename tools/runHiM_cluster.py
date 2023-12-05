@@ -118,7 +118,7 @@ def read_arguments():
     if args.partition:
         run_parameters["partition"] = args.partition
     else:
-        run_parameters["partition"] = "defq"
+        run_parameters["partition"] = "muse-visu"
 
     if args.nodelist:
         run_parameters["nodelist"] = args.nodelist
@@ -240,7 +240,7 @@ def main():
             [
                 "",
                 "source /trinity/shared/apps/local/Python/Anaconda/3-5.1.0/etc/profile.d/conda.sh",
-                "conda activate pyHiM",
+                "conda activate pyHiM39",
                 "",
             ]
         )
@@ -263,7 +263,7 @@ def main():
         print(f"Folder to run: {folder}")
         print(f"Output logfile: {output_file}")
 
-        pyHiM = "pyhim -F " + folder + CMD + threads + " > " + output_file
+        pyHiM = "pyHiM.py -F " + folder + CMD + threads + " > " + output_file
 
         if not run_parameters["sbatch"]:
             pyHiM = pyHiM + " &"
