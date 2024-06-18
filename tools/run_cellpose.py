@@ -22,17 +22,19 @@ import argparse
 
 def parseArguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", help="Name of input trace file.")
+    parser.add_argument("--input", help="Name of input image file.")
     parser.add_argument("--cellprob", help="cellprob threshold. Default = -8.")
     parser.add_argument("--flow", help="flow threshold. Default = 10.")
     parser.add_argument("--stitch", help="stitch threshold. Default = 0.1.")
     parser.add_argument("--diam", help="diameter. Default = 50.")
-    parser.add_argument("--pipe", help="inputs Trace file list from stdin (pipe)", action="store_true")
+    parser.add_argument("--pipe", help="inputs image file list from stdin (pipe)", action="store_true")
+    parser.add_argument("--use_gpu", help="Use GPU", action="store_true")
 
     p = {}
 
     args = parser.parse_args()
-
+    p["use_gpu"] = args.use_gpu
+    
     if args.input:
         p["input"] = args.input
     else:
@@ -71,7 +73,7 @@ def parseArguments():
 
     return p
     
-def run_cellpose(image_path, diam, cellprob, flow, stitch):
+def run_cellpose(image_path, diam, cellprob, flow, stitch,use_gpu=True):
     command = f"cellpose --verbose --no_npy --save_tif --image_path {image_path} --chan 0 --diameter {diam} --stitch_threshold {stitch} --flow_threshold {flow} --cellprob_threshold {cellprob}"
     subprocess.run(command, shell=True)
 
@@ -79,21 +81,22 @@ def process_images(cellprob = -8,
     flow = 10,
     stitch = 0.1,
     diam = 50,
-    files = list()):
+    files = list()
+    use_gpu=True):
     
        
     print(f"Parameters: diam={diam} | cellprob={cellprob} | flow={flow} | stitch={stitch}\n")
     
     if len(files) > 0:
 
-        print("\n{} trace files to process= {}".format(len(files), "\n".join(map(str, files))))
+        print("\n{} image files to process= {}".format(len(files), "\n".join(map(str, files))))
            
         # iterates over traces in folder
         for file in files:
            
             print(f"> Analyzing image {file}")
 	
-            run_cellpose(file, diam, cellprob, flow, stitch)
+            run_cellpose(file, diam, cellprob, flow, stitch,use_gpu=use_gpu)
 
         
 # =============================================================================
@@ -114,6 +117,7 @@ def main():
         stitch = p['stitch'],
         diam = p['diam'],
         files = p['files'],
+        use_gpu=p['use_gpu']
         )
 
     print("Finished execution")
