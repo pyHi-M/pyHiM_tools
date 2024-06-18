@@ -22,7 +22,7 @@ from skimage.morphology import remove_small_objects
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", help="Name of input trace file.")
+    parser.add_argument("--input", help="Name of input file.")
     parser.add_argument("--num_pixels_min", help="Masks with less that this number of pixels will be removed. Default = 0")
     parser.add_argument("--save", help="Saves the processed 3D image", action="store_true")
     parser.add_argument("--convert", help="Converts from NPY to TIF or vice versa depending on input", action="store_true")
@@ -32,7 +32,7 @@ def parse_arguments():
     parser.add_argument("--y_max", help="Y maximum for a localization. Default = np.inf")
     parser.add_argument("--x_min", help="X minimum for a localization. Default = 0")
     parser.add_argument("--x_max", help="X maximum for a localization. Default = np.inf")    
-    parser.add_argument("--pipe", help="inputs Trace file list from stdin (pipe)", action="store_true")
+    parser.add_argument("--pipe", help="inputs file list from stdin (pipe)", action="store_true")
 
     p = {}
 
@@ -163,7 +163,7 @@ def process_images(p):
 
        print("\n{} files to process= <{}>".format(len(files), "\n".join(map(str, files))))
 
-       # iterates over traces in folder
+       # iterates over images in folder
        for file in files:
   
             filename, file_ext = os.path.splitext(file)

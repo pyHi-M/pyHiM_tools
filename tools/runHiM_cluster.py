@@ -5,9 +5,10 @@ Created on Fri May  7 19:28:21 2021
 
 @author: marcnol
 
-Lauches slurm srun job
+Launches slurm, srun or bash jobs from a number of target folders
 
 In the command line, run as
+
 $ runHiM_cluster.py
 
 
@@ -15,6 +16,7 @@ $ runHiM_cluster.py
 import argparse
 import glob
 import os
+import subprocess
 
 
 # =============================================================================
@@ -23,19 +25,16 @@ import os
 def read_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-D", "--dataset", help="dataset: name of folder with data within dataFolder"
-    )
-    parser.add_argument(
         "-F", "--dataFolder", help="Folder with data. Default: ~/scratch"
     )
     parser.add_argument("-S", "--singleDataset", help="Folder for single Dataset.")
     parser.add_argument(
-        "-A", "--account", help="Provide your account name. Default: episcope."
+        "-A", "--account", type=str, default = 'episcope',help="Provide your account name. Default: episcope."
     )
     parser.add_argument(
-        "-P", "--partition", help="Provide partition name. Default: tests"
+        "-P", "--partition", type=str, default='defq',help="Provide partition name. Default: tests"
     )
-    parser.add_argument("-N", "--nCPU", help="Number of CPUs/Task")
+    parser.add_argument("-N", "--nCPU", type=int, default=1, help="Number of CPUs/Task")
     parser.add_argument("--memPerCPU", help="Memory required per allocated CPU in Mb")
     parser.add_argument(
         "--nodelist", help="Specific host names to include in job allocation."
@@ -57,24 +56,22 @@ def read_arguments():
         help="Number of threads for parallel mode. None: sequential execution",
     )
     parser.add_argument("--srun", help="Runs using srun", action="store_true")
-    parser.add_argument("--xrun", help="Runs using bash", action="store_true")
     parser.add_argument("--sbatch", help="Runs using sbatch", action="store_true")
+    parser.add_argument("--bash", help="Runs using bash", action="store_true")
+    parser.add_argument("--parallel", help="Runs all processes in parallel", action="store_true")
 
     args = parser.parse_args()
 
     run_parameters = {}
     run_parameters["HOME"] = os.environ["HOME"]
-
-    if args.dataset:
-        run_parameters["dataset"] = args.dataset
-    else:
-        run_parameters["dataset"] = None
-
-    if args.nCPU:
-        run_parameters["nCPU"] = int(args.nCPU)
-    else:
-        run_parameters["nCPU"] = None
-
+    run_parameters["parallel"] =  args.parallel
+    run_parameters["bash"] = args.bash
+    run_parameters["srun"] = args.srun
+    run_parameters["sbatch"] = args.sbatch
+    run_parameters["account"] = args.account
+    run_parameters["partition"] = args.partition
+    run_parameters["nCPU"] = 1
+    
     if args.memPerCPU:
         run_parameters["memPerCPU"] = args.memPerCPU
     else:
@@ -85,23 +82,8 @@ def read_arguments():
     else:
         run_parameters["cmd"] = None
 
-    if args.xrun:
-        run_parameters["xrun"] = args.xrun
-    else:
-        run_parameters["xrun"] = False
-
-    if args.srun:
-        run_parameters["srun"] = args.srun
-    else:
-        run_parameters["srun"] = False
-
-    if args.sbatch:
-        run_parameters["sbatch"] = args.sbatch
-    else:
-        run_parameters["sbatch"] = False
-
     if args.dataFolder:
-        run_parameters["dataFolder"] = args.dataFolder
+        run_parameters["dataFolder"] = args.dataFolder.rstrip("/")
     else:
         run_parameters["dataFolder"] = run_parameters["HOME"] + os.sep + "scratch"
 
@@ -109,16 +91,6 @@ def read_arguments():
         run_parameters["singleDataset"] = args.singleDataset
     else:
         run_parameters["singleDataset"] = None
-
-    if args.account:
-        run_parameters["account"] = args.account
-    else:
-        run_parameters["account"] = "episcope"
-
-    if args.partition:
-        run_parameters["partition"] = args.partition
-    else:
-        run_parameters["partition"] = "defq"
 
     if args.nodelist:
         run_parameters["nodelist"] = args.nodelist
@@ -140,19 +112,17 @@ def read_arguments():
     else:
         run_parameters["threads"] = None
 
-    print(f"Parameters loaded: {run_parameters}\n")
-
     return run_parameters
 
 
 def main():
     run_parameters = read_arguments()
 
-    if run_parameters["dataset"] is None:
-        print("ERROR: No dataset provided!")
-        raise SystemExit
+    print(f"Parameters loaded: {run_parameters}\n")
 
-    root_folder = run_parameters["dataFolder"] + os.sep + run_parameters["dataset"]
+    root_folder = run_parameters["dataFolder"] 
+
+    run_parameters["dataset"] = root_folder.split("/")[-1]
 
     if run_parameters["singleDataset"] is None:
         folders = glob.glob(root_folder + os.sep + "*")
@@ -167,7 +137,7 @@ def main():
     folders.sort()
 
     print("*" * 50)
-    print(f"$ Dataset: {run_parameters['dataset']}")
+    print("$ Dataset: {}".format(run_parameters['dataset']))
     print(f"$ Folder: {root_folder}")
     print(f"$ Number of CPUs: {run_parameters['nCPU']}")
     print(f"$ Command: {run_parameters['cmd']}")
@@ -178,11 +148,12 @@ def main():
 
     print(f"\n\n$ Found {len(folders0)} folders in {root_folder}")
     print(
-        f"$ Of these, {len(folders)} contained an parameters.json file and will be processed"
+        f"$ Of these, {len(folders)} contained a parameters.json file and will be processed"
     )
     print(f"Folders to process: {folders}")
     print(f"$ Scheduling {len(folders)} jobs...")
     print("-" * 50)
+
 
     if run_parameters["memPerCPU"] is None:
         memPerCPU = ""
@@ -194,7 +165,7 @@ def main():
     else:
         nodelist = " --nodelist=" + run_parameters["nodelist"]
 
-    if run_parameters["nCPU"] is None:
+    if run_parameters["nCPU"] == 1:
         CPUsPerTask = ""
     else:
         CPUsPerTask = " --cpus-per-task " + str(run_parameters["nCPU"])
@@ -244,7 +215,10 @@ def main():
                 "",
             ]
         )
-
+    elif run_parameters["bash"]:  
+        BATCH_file = ["#!/bin/bash"]
+        
+        
     for folder in folders:
         output_file = (
             run_parameters["HOME"]
@@ -265,8 +239,9 @@ def main():
 
         pyHiM = "pyHiM.py -F " + folder + CMD + threads 
 
-        if not run_parameters["sbatch"]:
+        if run_parameters["srun"] or run_parameters["parallel"]:
             pyHiM = pyHiM + " &"
+
 
         SRUN = (
             "srun --account="
@@ -291,17 +266,18 @@ def main():
             SBATCH_list = SBATCH_list + SBATCH_header[1]
             SBATCH_list.append(f"\n# dataset: {job_name}")
             SBATCH_list.append("srun " + pyHiM)
-
-        if run_parameters["xrun"]:
-            os.system(pyHiM)
+        elif run_parameters["bash"]:
+            SBATCH_list = []
+            SBATCH_list.append(f"\n# dataset: {job_name}")
+            SBATCH_list.append(pyHiM)
+            BATCH_file = BATCH_file + SBATCH_list
         elif run_parameters["srun"]:
-            os.system(SRUN)
-
-        if not run_parameters["sbatch"]:
             print(f"Command to run: {SRUN}")
             print("-" * 50)
-        elif run_parameters["sbatch"]:
-            print("SBATCH script:\n{}".format("\n".join(SBATCH_list)))
+            subprocess.run(SRUN)
+
+        if run_parameters["sbatch"]:
+            print("$ script: \n{}".format("\n".join(SBATCH_list)))
             print("-" * 80)
 
             file_name = f"sbatch_script_{job_name}.bash"
@@ -318,8 +294,13 @@ def main():
         with open(bash_script_name, mode="w", encoding="utf-8") as f:
             for item in BATCH_file:
                 f.write(f"{item}\n")
-
-        print(f"\nTo run master bash script:\n$ bash {bash_script_name}")
+    elif run_parameters["bash"]:
+        bash_script_name = f"joblist_{run_parameters['dataset']}.bash"
+        with open(bash_script_name, mode="w", encoding="utf-8") as f:
+            for item in BATCH_file:
+                f.write(f"{item}\n")
+                        
+    print(f"\nTo run master bash script:\n$ bash {bash_script_name}")
 
 
 if __name__ == "__main__":

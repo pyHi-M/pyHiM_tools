@@ -31,7 +31,7 @@ def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", help="Name of input file.")
     parser.add_argument("--output", help="Name of output dataset file name.")
-    parser.add_argument("--pipe", help="inputs Trace file list from stdin (pipe)", action="store_true")
+    parser.add_argument("--pipe", help="inputs file list from stdin (pipe)", action="store_true")
 
     args = parser.parse_args()
 
@@ -135,7 +135,7 @@ def process_images(files=list(), output_dataset = None):
 
        print("\n{} files to process= <{}>".format(len(files), "\n".join(map(str, files))))
 
-       # iterates over traces in folder
+       # iterates over images in folder
        for file in files:
 
             print(f"> Analyzing image {file}")
