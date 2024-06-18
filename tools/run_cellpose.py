@@ -75,6 +75,7 @@ def parseArguments():
     
 def run_cellpose(image_path, diam, cellprob, flow, stitch,use_gpu=True):
     command = f"cellpose --verbose --no_npy --save_tif --image_path {image_path} --chan 0 --diameter {diam} --stitch_threshold {stitch} --flow_threshold {flow} --cellprob_threshold {cellprob}"
+    print(f"$ running: \n{command}")
     subprocess.run(command, shell=True)
 
 def process_images(cellprob = -8,
