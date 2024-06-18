@@ -81,7 +81,7 @@ def process_images(cellprob = -8,
     flow = 10,
     stitch = 0.1,
     diam = 50,
-    files = list()
+    files = list(),
     use_gpu=True):
     
        
