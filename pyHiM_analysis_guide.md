@@ -29,7 +29,7 @@ You need to:
 ```
 $ mkdir $HOME/Repositories && cd $HOME/Repositories
 $ git clone git@github.com:pyHi-M/pyHiM_tools.git
-$ echo 'export PATH="$PATH:$HOME/Repositories/pyHiM_tools/tools"' > ~/.bashrc
+$ echo 'export PATH="$PATH:$HOME/Repositories/pyHiM_tools/tools"' >> ~/.bashrc
 $ bash
 ```
 
@@ -45,7 +45,7 @@ You need to:
 ```
 $ mkdir $HOME/Repositories && cd $HOME/Repositories
 $ git clone git@github.com:marcnol/lab_scripts.git
-$ echo 'export PATH="$PATH:$HOME/Repositories/lab_scripts/imaging/deconwolf"' > ~/.bashrc
+$ echo 'export PATH="$PATH:$HOME/Repositories/lab_scripts/imaging/deconwolf"' >> ~/.bashrc
 $ bash
 ```
 
@@ -295,7 +295,7 @@ $ ls *DAPI*ch00.tif | mask_cellpose --input scan_001_DAPI_001_ROI_converted_deco
 [Debugging] Make sure the `src/postProcessing` folder is in your PATH. Otherwise, run:
 
 ```
-$ echo 'export PATH="$PATH:$HOME/Repositories/pyHiM/src/postProcessing"' > ~/.bashrc
+$ echo 'export PATH="$PATH:$HOME/Repositories/pyHiM/src/postProcessing"' >> ~/.bashrc
 $ bash
 ```
 
