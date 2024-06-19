@@ -57,28 +57,47 @@ The most convenient way is using a conda environment.
 
 #### Installation Instructions with conda
 
-If you have an older cellpose environment you can remove it with conda env remove -n cellpose before creating a new one.
+If you have an older cellpose environment you can remove it with 
+```
+conda env remove -n cellpose 
+```
+before creating a new one.
 
 If you are using a GPU, make sure its drivers and the cuda libraries are correctly installed.
 
 Install an Anaconda distribution of Python. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
+
 Open an anaconda prompt / command prompt which has conda for python 3 in the path
-Create a new environment with conda create --name cellpose python=3.8. We recommend python 3.8, but python 3.9 and 3.10 will likely work as well.
-To activate this new environment, run conda activate cellpose
-To install the minimal version of cellpose, run python -m pip install cellpose.
-To install cellpose and the GUI, run python -m pip install cellpose[gui]. If you're on a zsh server, you may need to use ' ' around the cellpose[gui] call: python -m pip install 'cellpose[gui]'.
+
+Create a new environment with 
+```
+conda create --name cellpose python=3.8
+```
+
+We recommend python 3.8, but python 3.9 and 3.10 will likely work as well.
+
+To activate this new environment, run 
+```
+conda activate cellpose
+```
+
 To upgrade cellpose (package here), run the following in the environment:
 
+```
 python -m pip install cellpose --upgrade
-Note you will always have to run conda activate cellpose before you run cellpose. If you want to run jupyter notebooks in this environment, then also python -m pip install notebook and python -m pip install matplotlib.
+```
 
-You can also try to install cellpose and the GUI dependencies from your base environment using the command
+Note you will always have to run
+```
+conda activate cellpose
+```
 
-python -m pip install cellpose[gui]
-If you have issues with installation, see the docs for more details. You can also use the cellpose environment file included in the repository and create a cellpose environment with conda env create -f environment.yml which may solve certain dependency issues.
+before you run cellpose. 
 
-If these suggestions fail, open an issue.
-
+If you want to run jupyter notebooks in this environment, then also 
+```
+python -m pip install notebook and python -m pip install matplotlib
+```
 
 ## Pre-processing
 
