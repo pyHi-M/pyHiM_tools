@@ -288,7 +288,7 @@ See instructions here:
 
 Example:
 ```
-$ mask_cellpose --input scan_001_DAPI_001_ROI_converted_decon_ch00.tif
+$ mask_cellpose --input scan_001_DAPI_001_ROI_converted_decon_ch00.tif --gpu
 ```
 
 
