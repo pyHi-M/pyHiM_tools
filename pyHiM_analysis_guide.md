@@ -315,7 +315,7 @@ See instructions here:
 
 Example:
 ```
-$ ls *DAPI*ch00.tif | mask_cellpose --input scan_001_DAPI_001_ROI_converted_decon_ch00.tif
+$ mask_cellpose --input scan_001_DAPI_001_ROI_converted_decon_ch00.tif --gpu
 ```
 
 
@@ -338,7 +338,7 @@ $ pyHiM.py -C localize_3d,filter_localizations,register_localizations
 
 To make a BASH script to run in multiple folders at once
 
-``
+```
 $ runHiM_cluster.py -F folder_with_ROIs --bash -C localize_3d,filter_localizations,register_localizations
 ```
 
@@ -358,7 +358,7 @@ $ pyHiM.py -C build_traces
 
 To make a BASH script to run in multiple folders at once
 
-``
+```
 $ runHiM_cluster.py -F folder_with_ROIs --bash -C build_traces
 ```
 
