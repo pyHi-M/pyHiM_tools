@@ -97,31 +97,31 @@ Example if you performed an experiment and the raw data are in `/mnt/grey/DATA/r
 Deinterleave data in situ:
 
 ```
-cd /mnt/grey/DATA/rawData_2024/Experiment_X
+cd /mnt/grey/DATA/rawData_2024/Experiment_X/deinterleaved
 ls */*tif | deinterleave_channels.py --N_channels 2 --pipe
 ```
 
 Create destination folder and move data therein:
 ```
-mkdir /mnt/grey/DATA/ProcessedData_2024/Experiment_X
-mv */*ch0*.tif /mnt/grey/DATA/ProcessedData_2024/Experiment_X
+mkdir /mnt/grey/DATA/ProcessedData_2024/Experiment_X/deinterleaved
+mv */*ch0*.tif /mnt/grey/DATA/ProcessedData_2024/Experiment_X/deinterleaved
 ```
 
 If your data has 3 channels, then adapt as follows:
 ```
-cd /mnt/grey/DATA/rawData_2024/Experiment_X
+cd /mnt/grey/DATA/rawData_2024/Experiment_X/deinterleaved
 ls */*tif | deinterleave_channels.py --N_channels 3 --pipe
 ```
 
 To deinterleave barcodes, you need to expand the `ls` command so it can find the tifs:
 ```
-cd /mnt/grey/DATA/rawData_2024/Experiment_X
+cd /mnt/grey/DATA/rawData_2024/Experiment_X/deinterleaved
 ls */*/*tif | deinterleave_channels.py --N_channels 2 --pipe
 ```
 
 Remember then to move the files once you are done:
 ```
-mv */*/*ch0*.tif /mnt/grey/DATA/ProcessedData_2024/Experiment_X
+mv */*/*ch0*.tif /mnt/grey/DATA/ProcessedData_2024/Experiment_X/deinterleaved
 ```
 
 Usage:
@@ -143,8 +143,10 @@ optional arguments:
 
 Finally run this script to process all tif files in a the folder holding the deinterleaved images:
 ```sh
-$ deconvolve_dw.py
+$ deconvolve_dw.py --gpu
 ```
+
+Run this command in either lifou or lopevi.
 
 This script assumes that 
 - DAPI ch00 was acquired at 400nm
@@ -154,13 +156,23 @@ This script assumes that
 
 If this was not the case for your experiment, you will need to adapt the script!
 
+You now need to create a folder to hold the deconvolved images and move them there. For this
+
+```
+mkdir /mnt/grey/DATA/ProcessedData_2024/Experiment_X/deconvolved
+mv /mnt/grey/DATA/ProcessedData_2024/Experiment_X/deinterleaved/*decon*tif /mnt/grey/DATA/ProcessedData_2024/Experiment_X/deconvolved
+```
+
+
 #### huygens
 
 see instructions in the `lab_script` repository
 
 ### sort deconvolved images into ROI folders
 
-This script will sort deconvolved files into folders. TIF files from a single ROI will be linked together into a single folder.
+This script will sort deconvolved files into folders. The script lives in the `pyHiM_tools` repository.
+
+TIF files from a single ROI will be linked together into a single folder.
 
 The `parameters.json` file is expected to leave in the `--input` folder. This file will be linked to each ROI folder.
 
@@ -178,6 +190,7 @@ optional arguments:
 
 Example:
 ```
+cd /mnt/grey/DATA/ProcessedData_2024/Experiment_X/
 $ preprocess_HiM_run.py --input deconvolved
 ```
 
@@ -229,8 +242,11 @@ optional arguments:
 
 Example:
 ```
-$ runHiM_cluster.py -F /home/marcnol/grey/ProcessedData_2024/Experiment_49_David_RAMM_DNAFISH_Bantignies_proto_G1E_cells_LRKit/deinterleave_deconvolved_test/ --bash
+$ runHiM_cluster.py -F /home/marcnol/grey/ProcessedData_2024/Experiment_49_David_RAMM_DNAFISH_Bantignies_proto_G1E_cells_LRKit/deinterleave_deconvolved_test -C project,register_global,register_local,mask_3d,localize_3d,filter_localizations,register_localizations --bash --parallel
 ```
+
+The ``--parallel` argument will execute all ROIs simultaneously. Otherwise, they will run sequentially.
+
 Once the script is run, a bash file will be produced in the current folder. 
 
 Run this bash file to execute pyHiM. Remember to activate the environment first (e.g. `$ conda activate pyHiM39`):
