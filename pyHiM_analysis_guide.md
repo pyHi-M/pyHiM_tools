@@ -81,28 +81,12 @@ To activate this new environment, run
 conda activate cellpose
 ```
 
-To upgrade cellpose (package here), run the following in the environment:
-
-```
-conda```
-
-Note you will always have to run
-```
-conda activate cellpose
-```
-
-before you run cellpose. 
-
 If you want to run jupyter notebooks in this environment, then also 
 ```
 python -m pip install notebook and python -m pip install matplotlib
 ```
 
 ## Pre-processing
-
-### link raw images from an experiment into a single folder
-
-
 
 ### deinterleave images
 
