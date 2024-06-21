@@ -84,8 +84,7 @@ conda activate cellpose
 To upgrade cellpose (package here), run the following in the environment:
 
 ```
-python -m pip install cellpose --upgrade
-```
+conda```
 
 Note you will always have to run
 ```
@@ -103,16 +102,42 @@ python -m pip install notebook and python -m pip install matplotlib
 
 ### link raw images from an experiment into a single folder
 
-ASK OLIVIER
 
 
 ### deinterleave images
 
 For this use the `deinterleave_channels.py` function from `pyHiM_tools`.
 
-Example:
+Example if you performed an experiment and the raw data are in `/mnt/grey/DATA/rawData_2024/Experiment_X`:
+
+Deinterleave data in situ:
+
 ```
-$ ls *tif | deinterleave_channels.py --N_channels 2 --pipe
+cd /mnt/grey/DATA/rawData_2024/Experiment_X
+ls */*tif | deinterleave_channels.py --N_channels 2 --pipe
+```
+
+Create destination folder and move data therein:
+```
+mkdir /mnt/grey/DATA/ProcessedData_2024/Experiment_X
+mv */*ch0*.tif /mnt/grey/DATA/ProcessedData_2024/Experiment_X
+```
+
+If your data has 3 channels, then adapt as follows:
+```
+cd /mnt/grey/DATA/rawData_2024/Experiment_X
+ls */*tif | deinterleave_channels.py --N_channels 3 --pipe
+```
+
+To deinterleave barcodes, you need to expand the `ls` command so it can find the tifs:
+```
+cd /mnt/grey/DATA/rawData_2024/Experiment_X
+ls */*/*tif | deinterleave_channels.py --N_channels 2 --pipe
+```
+
+Remember then to move the files once you are done:
+```
+mv */*/*ch0*.tif /mnt/grey/DATA/ProcessedData_2024/Experiment_X
 ```
 
 Usage:
@@ -129,7 +154,25 @@ optional arguments:
 
 ### deconvolve images
 
+#### deconwolf
 
+
+Finally run this script to process all tif files in a the folder holding the deinterleaved images:
+```sh
+$ deconvolve_dw.py
+```
+
+This script assumes that 
+- DAPI ch00 was acquired at 400nm
+- DAPI ch01 was acquired at 488nm (fiducial)
+- RT ch00 was acquired at 488nm (fiducial)
+- RT ch01 was acquired at 638nm
+
+If this was not the case for your experiment, you will need to adapt the script!
+
+#### huygens
+
+see instructions in the `lab_script` repository
 
 ### sort deconvolved images into ROI folders
 
