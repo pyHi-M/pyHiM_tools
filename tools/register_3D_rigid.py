@@ -4,6 +4,7 @@
 
 import SimpleITK as sitk
 import argparse
+import numpy as np
 
 def read_image(file_path):
     """Read an image from file."""
@@ -12,6 +13,31 @@ def read_image(file_path):
 def write_image(image, file_path):
     """Write an image to file."""
     sitk.WriteImage(image, file_path)
+
+
+def get_euler_matrix(transform):
+    """Get the Euler matrix from a SimpleITK Euler3DTransform."""
+    # Get the parameters (rotation and translation)
+    parameters = transform.GetParameters()
+    # Convert to radians
+    angle_x, angle_y, angle_z = np.deg2rad(parameters[:3])
+    
+    # Compute the rotation matrices for each axis
+    rx = np.array([[1, 0, 0],
+                   [0, np.cos(angle_x), -np.sin(angle_x)],
+                   [0, np.sin(angle_x), np.cos(angle_x)]])
+    
+    ry = np.array([[np.cos(angle_y), 0, np.sin(angle_y)],
+                   [0, 1, 0],
+                   [-np.sin(angle_y), 0, np.cos(angle_y)]])
+    
+    rz = np.array([[np.cos(angle_z), -np.sin(angle_z), 0],
+                   [np.sin(angle_z), np.cos(angle_z), 0],
+                   [0, 0, 1]])
+    
+    # Combine the rotation matrices
+    euler_matrix = rz @ ry @ rx
+    return euler_matrix
 
 def align_images(fixed_image, moving_image):
     """Align the moving_image to the fixed_image using a rigid transformation."""
@@ -48,7 +74,33 @@ def align_images(fixed_image, moving_image):
     final_transform = registration_method.Execute(sitk.Cast(fixed_image, sitk.sitkFloat32), 
                                                             sitk.Cast(moving_image, sitk.sitkFloat32))
     
-    return final_transform
+    # Extract the Euler3DTransform from the CompositeTransform
+    euler_transform = None
+    for i in range(final_transform.GetNumberOfTransforms()):
+        if isinstance(final_transform.GetNthTransform(i), sitk.Euler3DTransform):
+            euler_transform = final_transform.GetNthTransform(i)
+            break
+
+    if euler_transform is None:
+        raise ValueError("No Euler3DTransform found in the composite transform.")
+
+    # Get the Euler matrix
+    euler_matrix = get_euler_matrix(euler_transform)
+    
+    # Get the metric
+    metric_value = registration_method.GetMetricValue()
+    
+    # Get the translation parameters and convert to pyHiM standard shift values
+    translation = list(euler_transform.GetTranslation())
+    translation[0], translation[1], translation[2] = -translation[1], -translation[0], -translation[2]
+    
+    transform_details = {
+        'shifts_xyz': translation,
+        'euler_matrix': euler_matrix,
+        'metric_value': metric_value,
+    }
+
+    return final_transform, transform_details
 
 def resample_image(moving_image, transform, reference_image):
     """Resample the moving image using the provided transform and reference image."""
@@ -69,19 +121,27 @@ def main():
 
     args = parser.parse_args()
 
+    print(f"$ Reading images: \n Reference: {args.reference}\n Moving: {args.moving}")
+
     # Read the images
     fixed_image = read_image(args.reference)
     moving_image = read_image(args.moving)
     
     # Align the images
-    final_transform = align_images(fixed_image, moving_image)
-    
+    print("$ Aligning images in 3D...")
+    final_transform, transform_details = align_images(fixed_image, moving_image)
+        
     # Resample the moving image
+    print("$ Resampling ...")
     resampled_moving_image = resample_image(moving_image, final_transform, fixed_image)
     
     # Save the result
     write_image(resampled_moving_image, args.output)
     print(f"Aligned image saved to {args.output}")
+    print("Transformation Details:")
+    print(f"Shifts (XYZ): {transform_details['shifts_xyz']}")
+    print(f"Euler Matrix:\n{transform_details['euler_matrix']}")
+    print(f"Metric-value:\n{transform_details['metric_value']}")
 
 if __name__ == "__main__":
     main()
