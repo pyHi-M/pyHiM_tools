@@ -76,14 +76,17 @@ if __name__ == "__main__":
     print(f"$ loading file: {file}")
     imageRaw = io.imread(file).squeeze()
     
-    # makes subVolume extractions
-    im_size = imageRaw.shape
-    means = [int(x/2) for x in im_size]
-    borders_left = [a-b//zoom_factor for a,b in zip(means,im_size)]
-    borders_right = [a+b//zoom_factor for a,b in zip(means,im_size)]
-    
-    im = imageRaw[:,borders_left[1]:borders_right[1],borders_left[2]:borders_right[2]]
-    
+    if zoom_factor > 0:
+        # makes subVolume extractions
+        im_size = imageRaw.shape
+        means = [int(x/2) for x in im_size]
+        borders_left = [a-b//zoom_factor for a,b in zip(means,im_size)]
+        borders_right = [a+b//zoom_factor for a,b in zip(means,im_size)]
+        
+        im = imageRaw[:,borders_left[1]:borders_right[1],borders_left[2]:borders_right[2]]
+    else:
+        im = imageRaw
+        
     im_size_out = im.shape
     print(f"$ output image size: {im_size_out}")
     
