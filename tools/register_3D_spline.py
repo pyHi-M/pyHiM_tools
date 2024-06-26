@@ -49,7 +49,7 @@ def align_images(fixed_image, moving_image):
                                                     sitk.Cast(moving_image, sitk.sitkFloat32))
 
     # Deformable registration using B-spline
-    grid_physical_spacing = [50.0, 50.0, 50.0]  # control point spacing in physical coordinates
+    grid_physical_spacing = [50.0, 50.0, 5.0]  # control point spacing in physical coordinates
     image_physical_size = [size*spacing for size, spacing in zip(fixed_image.GetSize(), fixed_image.GetSpacing())]
     mesh_size = [int(image_size/grid_spacing + 0.5) for image_size, grid_spacing in zip(image_physical_size, grid_physical_spacing)]
     transform_domain_mesh_size = mesh_size
@@ -86,15 +86,18 @@ def main():
     parser.add_argument('--displacement_field', required=True, help='Path to save the displacement field image file.')
 
     args = parser.parse_args()
+    print(f"$ Reading images: \n Reference: {args.reference}\n Moving: {args.moving}")
 
     # Read the images
     fixed_image = read_image(args.reference)
     moving_image = read_image(args.moving)
     
     # Align the images
+    print("$ Aligning images in 3D...")
     final_transform, displacement_field = align_images(fixed_image, moving_image)
     
     # Resample the moving image
+    print("$ Resampling ...")
     resampled_moving_image = resample_image(moving_image, final_transform, fixed_image)
     
     # Save the result
