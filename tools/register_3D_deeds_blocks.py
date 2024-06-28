@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# this version performs downsampling 
+
+'''
+installations
+
+conda create -y -n deeds python==3.11
+pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
+pip install simpleITK numpy psutil
+
+'''
+
 import argparse
 import SimpleITK as sitk
 import numpy as np
