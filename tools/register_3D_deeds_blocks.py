@@ -109,13 +109,16 @@ def main():
     parser.add_argument('--output', required=True, help='Path to the output (aligned) image file.')
     parser.add_argument('--displacement_field', required=True, help='Path to save the displacement field image file.')
     parser.add_argument('--factors', type=int, nargs=2, default=[2, 2], help='Factors to split the image (y, x).')
+    parser.add_argument('--alpha', type=float, default=1.6, help='alpha factor. Default=1.6')
+    parser.add_argument('--levels', type=int, default=5, help='number of levels. Default=5')
+    parser.add_argument("--verbose", help="Default=False", action='store_true')
 
     args = parser.parse_args()
 
     # Read the images
     fixed_image = read_image(args.reference)
     moving_image = read_image(args.moving)
-    
+
     fixed_image_np = to_numpy(fixed_image)
     moving_image_np = to_numpy(moving_image)
     
@@ -140,7 +143,7 @@ def main():
         print(f"Processing block {i + 1}/{len(fixed_blocks)} of size {fixed_block.shape}")
         
         # Perform registration
-        moved, vz, vy, vx = registration_imwarp_fields(fixed_block, moving_block)
+        moved, vz, vy, vx = registration_imwarp_fields(fixed_block, moving_block, alpha=args.alpha, levels=args.levels, verbose=args.verbose)
         registered_blocks.append(moved)
         
         # Store displacement fields
