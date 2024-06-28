@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# this version performs downsampling 
+# This version performs block-wise processing to avoid memory issues.
 
 '''
 installations
 
 conda create -y -n deeds python==3.11
 pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
-pip install simpleITK numpy psutil
+pip install SimpleITK numpy psutil
 
 '''
 
@@ -31,55 +31,74 @@ def print_memory_usage(step):
     memory_info = process.memory_info()
     print(f"{step} - Memory usage: {memory_info.rss / (1024 * 1024):.2f} MB")
 
-def split_image(image_np, block_size):
-    """Split the 3D image into smaller blocks."""
-    z_blocks = image_np.shape[0] // block_size[0]
-    y_blocks = image_np.shape[1] // block_size[1]
-    x_blocks = image_np.shape[2] // block_size[2]
+def split_image(image_np, factors):
+    """Split the 3D image into smaller blocks based on demultiplying factors in XY dimensions."""
+    z_size = image_np.shape[0]
+    y_size = image_np.shape[1]
+    x_size = image_np.shape[2]
+    
+    block_size = [z_size, y_size // factors[0], x_size // factors[1]]
     blocks = []
 
-    for z in range(z_blocks):
-        for y in range(y_blocks):
-            for x in range(x_blocks):
-                block = image_np[
-                    z * block_size[0]:(z + 1) * block_size[0],
-                    y * block_size[1]:(y + 1) * block_size[1],
-                    x * block_size[2]:(x + 1) * block_size[2]
-                ]
-                blocks.append(block)
-    return blocks, (z_blocks, y_blocks, x_blocks)
+    for y in range(factors[0]):
+        for x in range(factors[1]):
+            y_start = y * block_size[1]
+            x_start = x * block_size[2]
+            y_end = (y + 1) * block_size[1]
+            x_end = (x + 1) * block_size[2]
+            
+            # Handle the case where the dimensions are not evenly divisible
+            if y == factors[0] - 1:
+                y_end = y_size
+            if x == factors[1] - 1:
+                x_end = x_size
+                
+            block = image_np[:, y_start:y_end, x_start:x_end]
+            blocks.append(block)
+    return blocks, block_size, factors
 
-def stitch_blocks(blocks, blocks_shape, block_size):
+def stitch_blocks(blocks, blocks_shape, block_size, original_shape, is_vector=False):
     """Stitch the smaller blocks back into a single 3D image."""
-    stitched_image = np.zeros((
-        blocks_shape[0] * block_size[0],
-        blocks_shape[1] * block_size[1],
-        blocks_shape[2] * block_size[2]
-    ), dtype=blocks[0].dtype)
+    if is_vector:
+        stitched_image = np.zeros(
+            (original_shape[0], original_shape[1], original_shape[2], blocks[0].shape[-1]),
+            dtype=blocks[0].dtype
+        )
+    else:
+        stitched_image = np.zeros(
+            (original_shape[0], original_shape[1], original_shape[2]),
+            dtype=blocks[0].dtype
+        )
 
     block_index = 0
-    for z in range(blocks_shape[0]):
-        for y in range(blocks_shape[1]):
-            for x in range(blocks_shape[2]):
-                stitched_image[
-                    z * block_size[0]:(z + 1) * block_size[0],
-                    y * block_size[1]:(y + 1) * block_size[1],
-                    x * block_size[2]:(x + 1) * block_size[2]
-                ] = blocks[block_index]
-                block_index += 1
+    for y in range(blocks_shape[0]):
+        for x in range(blocks_shape[1]):
+            y_start = y * block_size[1]
+            x_start = x * block_size[2]
+            y_end = (y + 1) * block_size[1]
+            x_end = (x + 1) * block_size[2]
+            
+            # Handle the case where the dimensions are not evenly divisible
+            if y == blocks_shape[0] - 1:
+                y_end = original_shape[1]
+            if x == blocks_shape[1] - 1:
+                x_end = original_shape[2]
+
+            if is_vector:
+                stitched_image[:, y_start:y_end, x_start:x_end, :] = blocks[block_index]
+            else:
+                stitched_image[:, y_start:y_end, x_start:x_end] = blocks[block_index]
+            block_index += 1
 
     return stitched_image
 
 def to_numpy(img):
-    result = sitk.GetArrayFromImage(img)
-    return result
+    return sitk.GetArrayFromImage(img)
 
 def to_sitk(img, ref_img=None):
     img = sitk.GetImageFromArray(img)
-
     if ref_img:
         img.CopyInformation(ref_img)
-
     return img
 
 def main():
@@ -89,7 +108,7 @@ def main():
     parser.add_argument('--moving', required=True, help='Path to the moving image file.')
     parser.add_argument('--output', required=True, help='Path to the output (aligned) image file.')
     parser.add_argument('--displacement_field', required=True, help='Path to save the displacement field image file.')
-    parser.add_argument('--block_size', type=int, nargs=3, default=[512, 512, 65], help='Block size for splitting the image (z, y, x).')
+    parser.add_argument('--factors', type=int, nargs=2, default=[2, 2], help='Factors to split the image (y, x).')
 
     args = parser.parse_args()
 
@@ -105,14 +124,16 @@ def main():
     print_memory_usage("Before splitting")
 
     # Split images into blocks
-    fixed_blocks, blocks_shape = split_image(fixed_image_np, args.block_size)
-    moving_blocks, _ = split_image(moving_image_np, args.block_size)
+    fixed_blocks, block_size, factors = split_image(fixed_image_np, args.factors)
+    moving_blocks, _, _ = split_image(moving_image_np, args.factors)
 
     print(f"Number of blocks: {len(fixed_blocks)}")
     print_memory_usage("After splitting")
 
     registered_blocks = []
-    displacement_fields = []
+    displacement_fields_vz = []
+    displacement_fields_vy = []
+    displacement_fields_vx = []
 
     # Process each block
     for i, (fixed_block, moving_block) in enumerate(zip(fixed_blocks, moving_blocks)):
@@ -123,17 +144,24 @@ def main():
         registered_blocks.append(moved)
         
         # Store displacement fields
-        displacement_field = np.stack([vz, vy, vx], axis=-1).astype(np.float32)
-        displacement_fields.append(displacement_field)
+        displacement_fields_vz.append(vz)
+        displacement_fields_vy.append(vy)
+        displacement_fields_vx.append(vx)
         
         print_memory_usage(f"After processing block {i + 1}")
 
     # Stitch the registered blocks back together
-    registered_image_np = stitch_blocks(registered_blocks, blocks_shape, args.block_size)
-    displacement_fields_np = np.concatenate(displacement_fields, axis=0)
+    registered_image_np = stitch_blocks(registered_blocks, factors, block_size, fixed_image_np.shape)
+    vz_stitched = stitch_blocks(displacement_fields_vz, factors, block_size, fixed_image_np.shape)
+    vy_stitched = stitch_blocks(displacement_fields_vy, factors, block_size, fixed_image_np.shape)
+    vx_stitched = stitch_blocks(displacement_fields_vx, factors, block_size, fixed_image_np.shape)
+
+    # Combine the stitched displacement fields
+    displacement_fields_np = np.stack([vz_stitched, vy_stitched, vx_stitched], axis=-1)
 
     registered_image_sitk = to_sitk(registered_image_np, ref_img=fixed_image)
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
+    displacement_field_sitk.CopyInformation(fixed_image)
 
     # Save the registered image and displacement field
     write_image(registered_image_sitk, args.output)
