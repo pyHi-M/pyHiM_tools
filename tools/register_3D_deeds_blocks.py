@@ -137,7 +137,7 @@ def main():
 
     # Process each block
     for i, (fixed_block, moving_block) in enumerate(zip(fixed_blocks, moving_blocks)):
-        print(f"Processing block {i + 1}/{len(fixed_blocks)}")
+        print(f"Processing block {i + 1}/{len(fixed_blocks)} of size {fixed_block.shape}")
         
         # Perform registration
         moved, vz, vy, vx = registration_imwarp_fields(fixed_block, moving_block)
