@@ -5,6 +5,7 @@
 import SimpleITK as sitk
 import argparse
 import numpy as np
+import json
 
 def read_image(file_path):
     """Read an image from file."""
@@ -112,6 +113,23 @@ def resample_image(moving_image, transform, reference_image):
     
     return resampler.Execute(moving_image)
 
+
+def save_dict_to_json(dictionary, filename):
+    """
+    Saves a dictionary to a file in JSON format.
+
+    Parameters:
+    dictionary (dict): The dictionary to save.
+    filename (str): The name of the file to save the dictionary to.
+    """
+    try:
+        with open(filename, 'w') as json_file:
+            json.dump(dictionary, json_file, indent=4)
+        print(f"Dictionary successfully saved to {filename}")
+    except Exception as e:
+        print(f"An error occurred while saving the dictionary to JSON: {e}")
+
+
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Align two 3D images using SimpleITK.")
@@ -142,6 +160,12 @@ def main():
     print(f"Shifts (XYZ): {transform_details['shifts_xyz']}")
     print(f"Euler Matrix:\n{transform_details['euler_matrix']}")
     print(f"Metric-value:\n{transform_details['metric_value']}")
+    
+    output_dict = resampled_moving_image.split('.')[0]+"_rigid.json"    
+    print(f"$ output parameters saved in:\n{output_dict}")
+    save_dict_to_json(transform_details, output_dict)
 
 if __name__ == "__main__":
     main()
+
+
