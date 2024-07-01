@@ -161,7 +161,7 @@ def main():
     print(f"Euler Matrix:\n{transform_details['euler_matrix']}")
     print(f"Metric-value:\n{transform_details['metric_value']}")
     
-    output_dict = resampled_moving_image.split('.')[0]+"_rigid.json"    
+    output_dict = args.output.split('.')[0]+"_rigid.json"    
     print(f"$ output parameters saved in:\n{output_dict}")
     save_dict_to_json(transform_details, output_dict)
 
