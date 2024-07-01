@@ -7,7 +7,9 @@ installations
 
 conda create -y -n deeds python==3.11
 pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
-pip install simpleITK numpy psutil
+pip install SimpleITK numpy psutil
+
+marcnol, july 2024
 
 '''
 import argparse
@@ -149,7 +151,9 @@ def main():
     parser.add_argument('--displacement_field', required=True, help='Path to save the displacement field image file.')
 
     args = parser.parse_args()
-
+    print("This algorithm aligns two 3D volumes using the DEEDS method (deformable) based on optical flow.")
+    print("This implementation works on the full 3D volumes (may crash for big images).")    
+    
     # Read the images
     fixed_image = read_image(args.reference)
     moving_image = read_image(args.moving)

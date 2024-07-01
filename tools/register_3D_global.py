@@ -8,6 +8,8 @@ installations
 conda create -y -n sitk_env python==3.11
 pip install SimpleITK numpy psutil
 
+marcnol, july 2024
+
 '''
 
 import argparse

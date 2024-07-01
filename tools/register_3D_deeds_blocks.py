@@ -9,6 +9,8 @@ conda create -y -n deeds python==3.11
 pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
 pip install SimpleITK numpy psutil
 
+marcnol, july 2024
+
 '''
 
 import argparse
@@ -114,6 +116,8 @@ def main():
     parser.add_argument("--verbose", help="Default=False", action='store_true')
 
     args = parser.parse_args()
+    print("This algorithm aligns two 3D volumes using the DEEDS method (deformable) based on optical flow.")
+    print("This implementation breaks the images in user-defined blocks.")    
 
     # Read the images
     fixed_image = read_image(args.reference)

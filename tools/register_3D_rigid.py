@@ -2,6 +2,16 @@
 # -*- coding: utf-8 -*-
 # 
 
+'''
+installations
+
+conda create -y -n sitk_env python==3.11
+pip install SimpleITK numpy psutil
+
+marcnol, july 2024
+
+'''
+
 import SimpleITK as sitk
 import argparse
 import numpy as np
@@ -138,6 +148,8 @@ def main():
     parser.add_argument('--output', required=True, help='Path to the output (aligned) image file.')
 
     args = parser.parse_args()
+
+    print("This algorithm aligns two 3D volumes using rigid 3D translations an 3D rotations.")
 
     print(f"$ Reading images: \n Reference: {args.reference}\n Moving: {args.moving}")
 
