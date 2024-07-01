@@ -68,7 +68,8 @@ def align_images_translation_only(fixed_image, moving_image):
     print_memory_usage("After alignment")
 
     # Extract translation parameters
-    translation = final_transform.GetParameters()
+    translation = list(final_transform.GetParameters())
+    translation[0], translation[1], translation[2] = -translation[1], -translation[0], -translation[2]
 
     transform_details = {
         'shifts_xyz': translation,
