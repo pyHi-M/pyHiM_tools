@@ -110,7 +110,7 @@ def main():
     parser.add_argument('--moving', required=True, help='Path to the moving image file.')
     parser.add_argument('--output', required=True, help='Path to the output (aligned) image file.')
     parser.add_argument('--displacement_field', required=True, help='Path to save the displacement field image file.')
-    parser.add_argument('--factors', type=int, nargs=2, default=[2, 2], help='Factors to split the image (y, x).')
+    parser.add_argument('--factors', type=int, nargs=2, default=[2, 2], help='Factors to split the image (y, x). Default: 2 2 (two blocks by two blocks)')
     parser.add_argument('--alpha', type=float, default=1.6, help='alpha factor. Default=1.6')
     parser.add_argument('--levels', type=int, default=5, help='number of levels. Default=5')
     parser.add_argument("--verbose", help="Default=False", action='store_true')

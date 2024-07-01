@@ -58,6 +58,7 @@ if __name__ == "__main__":
     # parameters
     p = parseArguments()
     print("This algorithm shifts a 3D volume in TIF format by a user-provided amount.")
+    print("Use the shift values as produced by pyHiM or our other registation methods.")
 
     file = p["file"]
     
