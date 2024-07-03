@@ -81,6 +81,12 @@ To activate this new environment, run
 conda activate cellpose
 ```
 
+Now install cellpose in the environment:
+```
+python -m pip install cellpose[gui]
+```
+
+
 If you want to run jupyter notebooks in this environment, then also 
 ```
 python -m pip install notebook and python -m pip install matplotlib
@@ -322,7 +328,7 @@ $ bash joblist_folder_with_ROIs.bash
 
 #### run segmentation
 
-For this you need to run the `mask_cellpose.py` script that lives in `pyHiM`. Run in lopevi or lifou where 2-3 GPUs are available to speed up segmentation. The default parameters are set for DAPI segmentations.
+For this you need to run the `mask_cellpose.py` script that lives in `pyHiM` (**make sure you cloned pyHiM locally and that you linked the folder as indicated at the top of these instructions file**). Run in lopevi or lifou where 2-3 GPUs are available to speed up segmentation. The default parameters are set for DAPI segmentations.
 
 See instructions here:
 
@@ -361,6 +367,7 @@ $ runHiM_cluster.py -F folder_with_ROIs --bash -C localize_3d,filter_localizatio
 then run the bash script
 ```
 $ bash joblist_folder_with_ROIs.bash
+```
 
 ### Run build_trace
 
@@ -381,6 +388,7 @@ $ runHiM_cluster.py -F folder_with_ROIs --bash -C build_traces
 then run the bash script
 ```
 $ bash joblist_folder_with_ROIs.bash
+```
 
 ### benchmark analysis ROI per ROI.
 
