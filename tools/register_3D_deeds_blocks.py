@@ -7,9 +7,9 @@ installations
 
 conda create -y -n deeds python==3.11
 pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
-pip install SimpleITK numpy psutil
+pip install SimpleITK numpy psutil h5py
 
-marcnol, july 2024
+marcnol, July 2024
 
 '''
 
@@ -17,6 +17,7 @@ import argparse
 import SimpleITK as sitk
 import numpy as np
 import psutil
+import h5py
 from deeds import registration_imwarp_fields
 
 def read_image(file_path):
@@ -103,6 +104,22 @@ def to_sitk(img, ref_img=None):
         img.CopyInformation(ref_img)
     return img
 
+def write_displacement_field(displacement_field, file_path, format):
+    """Write the displacement field to the specified format."""
+    if format == 'tif':
+        sitk.WriteImage(displacement_field, file_path)
+    elif format == 'nii':
+        sitk.WriteImage(displacement_field, file_path)
+    elif format == 'h5':
+        displacement_array = sitk.GetArrayFromImage(displacement_field)
+        with h5py.File(file_path, 'w') as h5_file:
+            h5_file.create_dataset('image', data=displacement_array, compression='gzip')
+            h5_file.attrs['spacing'] = displacement_field.GetSpacing()
+            h5_file.attrs['origin'] = displacement_field.GetOrigin()
+            h5_file.attrs['direction'] = displacement_field.GetDirection()
+    else:
+        raise ValueError("Unsupported file format for displacement field.")
+
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Align two 3D images using DEEDS with block-wise processing.")
@@ -110,6 +127,7 @@ def main():
     parser.add_argument('--moving', required=True, help='Path to the moving image file.')
     parser.add_argument('--output', required=True, help='Path to the output (aligned) image file.')
     parser.add_argument('--displacement_field', required=True, help='Path to save the displacement field image file.')
+    parser.add_argument('--displacement_format', choices=['tif', 'nii', 'h5'], default='h5', help='Format to save the displacement field. Default is h5.')
     parser.add_argument('--factors', type=int, nargs=2, default=[2, 2], help='Factors to split the image (y, x). Default: 2 2 (two blocks by two blocks)')
     parser.add_argument('--alpha', type=float, default=1.6, help='alpha factor. Default=1.6')
     parser.add_argument('--levels', type=int, default=5, help='number of levels. Default=5')
@@ -170,9 +188,11 @@ def main():
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
     displacement_field_sitk.CopyInformation(fixed_image)
 
-    # Save the registered image and displacement field
+    # Save the registered image
     write_image(registered_image_sitk, args.output)
-    write_image(displacement_field_sitk, args.displacement_field)
+
+    # Save the displacement field in the specified format
+    write_displacement_field(displacement_field_sitk, args.displacement_field, args.displacement_format)
     print(f"Aligned image written to {args.output}")
     print(f"Displacement field written to {args.displacement_field}")
 
