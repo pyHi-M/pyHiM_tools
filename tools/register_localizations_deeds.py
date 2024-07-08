@@ -50,19 +50,45 @@ def read_deformation_field(file_path):
     displacement_array = sitk.GetArrayFromImage(displacement_field)
     return displacement_array
 
-def apply_deformation(localizations, deformation_field, z_binning=2):
+import tqdm
+
+def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2):
     """Apply deformation corrections to localizations."""
-    corrected_localizations = localizations.copy()
     
-    for i, loc in enumerate(localizations):
-        x, y, z = int(loc['xcentroid']), int(loc['ycentroid']), int(z_binning*loc['zcentroid'])
-        if 0 <= x < deformation_field.shape[2] and 0 <= y < deformation_field.shape[1] and 0 <= z < deformation_field.shape[0]:
-            dz, dy, dx = deformation_field[z, y, x]
-            corrected_localizations['xcentroid'][i] += -dx
-            corrected_localizations['ycentroid'][i] += -dy
-            corrected_localizations['zcentroid'][i] += -dz/z_binning
+    #corrected_localizations = localizations.copy()
     
-    return corrected_localizations
+    print(f"$ applying registrations to {len(localizations)} localizations")
+
+    for row in localizations:
+        barcode_number=int(row["Barcode #"])
+        if barcode_id == barcode_number:
+            print(f"$ Registering barcode: {barcode_number}")            
+                
+            x, y, z = int(row['xcentroid']), int(row['ycentroid']), int(z_binning*row['zcentroid'])
+            if 0 <= x < deformation_field.shape[2] and 0 <= y < deformation_field.shape[1] and 0 <= z < deformation_field.shape[0]:
+                dz, dy, dx = deformation_field[z, y, x]
+                row['xcentroid'] += -dx
+                row['ycentroid'] += -dy
+                row['zcentroid'] += -dz/z_binning
+                print(f"$ Correcting {row['Buid']} barcode: {row['Barcode #']}| rxyz-final = ({row['xcentroid']},{row['ycentroid']},{row['zcentroid']}, dxyz={dx},{dy},{dz})")
+                    
+                 
+    return localizations
+'''
+    for idx,localizations_barcode in enumerate(loc_table_indexed.groups):
+        barcode_number=int(list(set(localizations_barcode["Barcode #"]))[0])
+        if barcode_id == barcode_number:
+            print(f"$ Registering barcode: {barcode_number}")            
+                
+            for i, loc in enumerate(localizations_barcode):
+                x, y, z = int(loc['xcentroid']), int(loc['ycentroid']), int(z_binning*loc['zcentroid'])
+                if 0 <= x < deformation_field.shape[2] and 0 <= y < deformation_field.shape[1] and 0 <= z < deformation_field.shape[0]:
+                    dz, dy, dx = deformation_field[z, y, x]
+                    localizations_barcode['xcentroid'][i] += -dx
+                    localizations_barcode['ycentroid'][i] += -dy
+                    localizations_barcode['zcentroid'][i] += -dz/z_binning
+                    print(f"$ Correcting {loc['Buid']} barcode: {loc['Barcode #']}| rxyz-final = ({localizations_barcode['xcentroid'][i]},{localizations_barcode['ycentroid'][i]},{localizations_barcode['zcentroid'][i]}, dxyz={dx},{dy},{dz})")
+'''
 
 def main():
     # Set up argument parser
@@ -101,16 +127,19 @@ def main():
                 
                 if os.path.exists(deformation_file_path):
                     print(f"Applying deformation field: {deformation_file_path} for barcode ID: {barcode_id}")
-                    barcode_localizations = localizations[localizations['Barcode #'] == barcode_id]
+                    #loc_table_indexed = localizations.group_by("Barcode #")
+                    #barcode_localizations = localizations[localizations['Barcode #'] == barcode_id]
                     deformation_field = read_deformation_field(deformation_file_path)
-                    corrected_localizations = apply_deformation(barcode_localizations, deformation_field, z_binning=args.zBinning)
+                    localizations = apply_deformation(localizations, deformation_field, barcode_id, z_binning=args.zBinning)
                     
                     # Update the original table with corrected localizations
+                    '''
                     for row in corrected_localizations:
                         localizations[(localizations['Barcode #'] == barcode_id) & 
-                                      (localizations['xcentroid'] == row['xcentroid']) &
-                                      (localizations['ycentroid'] == row['ycentroid']) &
-                                      (localizations['zcentroid'] == row['zcentroid'])] = row
+                                        (localizations['xcentroid'] == row['xcentroid']) &
+                                        (localizations['ycentroid'] == row['ycentroid']) &
+                                        (localizations['zcentroid'] == row['zcentroid'])] = row
+                    '''
                 else:
                     print(f"Deformation field not found: {deformation_file_path}")
 
