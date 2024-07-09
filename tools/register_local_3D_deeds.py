@@ -6,10 +6,10 @@ It allows processing all files or specific files based on user input.
 
 Usage:
     Process all files:
-        python script_name.py -a -r reference_file.tif
+        register_local_3D_deeds.py -a -r reference_file.tif
 
     Process specific files by barcodes:
-        python script_name.py -b 16 18 20 -r reference_file.tif
+        register_local_3D_deeds.py -b 16 18 20 -r reference_file.tif
 
 Arguments:
     -a, --all                       Process all files matching the pattern "scan_001_RT*_???_ROI_converted_decon_ch00.tif".
