@@ -40,17 +40,21 @@ def process_files(files, reference_file):
         
         # Run the register_3D_deeds_blocks.py command with the constructed arguments and log the output
         with open(log_file, "w") as log:
-            subprocess.run(
-                [
-                    "register_3D_deeds_blocks.py",
-                    "--reference", reference_file,
-                    "--moving", file,
-                    "--displacement_field", displacement_field,
-                    "--output", output_file
-                ],
+            cmd = [
+                "register_3D_deeds_blocks.py",
+                "--reference", reference_file,
+                "--moving", file,
+                "--displacement_field", displacement_field,
+                "--output", output_file
+            ]
+            print("="*80)
+            print(f"$ will run: \n{' '.join(cmd)}")
+            
+            subprocess.run(cmd,
                 stdout=log,
                 stderr=subprocess.STDOUT
             )
+            
 def find_files(pattern,folder):
     
     files = [f for f in os.listdir(folder) if re.match(pattern, f)]
