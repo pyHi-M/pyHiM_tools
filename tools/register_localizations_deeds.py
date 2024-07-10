@@ -57,7 +57,8 @@ def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2)
     print(f"$ applying registrations to {len(localizations)} localizations")
 
     counter=0
-    for row in tqdm(localizations):
+    for row in tqdm(localizations, desc="Processing localizations"):
+
         barcode_number=int(row["Barcode #"])
         if barcode_id == barcode_number:
             print(f"$ Registering barcode: {barcode_number}")            
