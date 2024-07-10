@@ -19,6 +19,7 @@ import numpy as np
 import SimpleITK as sitk
 import h5py
 from astropy.table import Table
+import tqdm
 
 def read_localizations(file_path):
     """Read a localizations table from a file."""
@@ -50,15 +51,13 @@ def read_deformation_field(file_path):
     displacement_array = sitk.GetArrayFromImage(displacement_field)
     return displacement_array
 
-import tqdm
-
 def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2):
     """Apply deformation corrections to localizations."""
     
     print(f"$ applying registrations to {len(localizations)} localizations")
 
     counter=0
-    for row in localizations:
+    for row in tqdm(localizations):
         barcode_number=int(row["Barcode #"])
         if barcode_id == barcode_number:
             print(f"$ Registering barcode: {barcode_number}")            
@@ -114,19 +113,9 @@ def main():
                 
                 if os.path.exists(deformation_file_path):
                     print(f"Applying deformation field: {deformation_file_path} for barcode ID: {barcode_id}")
-                    #loc_table_indexed = localizations.group_by("Barcode #")
-                    #barcode_localizations = localizations[localizations['Barcode #'] == barcode_id]
                     deformation_field = read_deformation_field(deformation_file_path)
                     localizations = apply_deformation(localizations, deformation_field, barcode_id, z_binning=args.zBinning)
                     
-                    # Update the original table with corrected localizations
-                    '''
-                    for row in corrected_localizations:
-                        localizations[(localizations['Barcode #'] == barcode_id) & 
-                                        (localizations['xcentroid'] == row['xcentroid']) &
-                                        (localizations['ycentroid'] == row['ycentroid']) &
-                                        (localizations['zcentroid'] == row['zcentroid'])] = row
-                    '''
                 else:
                     print(f"Deformation field not found: {deformation_file_path}")
 
