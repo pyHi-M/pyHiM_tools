@@ -74,8 +74,8 @@ def process_files(files, reference_file, shifts_dict):
             ]
             
             if shifts:
-                cmd += ["--shifts", str(shifts[0]), str(shifts[1])]
-                print(f"$ Applying shifts for {base_filename}: {shifts} 0 ")
+                cmd += ["--shifts", str(shifts[0]), str(shifts[1])," 0 "]
+                print(f"$ Applying shifts for {base_filename}: {shifts}")
             else:
                 print(f"! No shifts found for {base_filename}")
 
