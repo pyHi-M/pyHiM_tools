@@ -61,7 +61,7 @@ def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2)
 
         barcode_number=int(row["Barcode #"])
         if barcode_id == barcode_number:
-            print(f"$ Registering barcode: {barcode_number}")            
+            #print(f"$ Registering barcode: {barcode_number}")            
                 
             x, y, z = int(row['xcentroid']), int(row['ycentroid']), int(z_binning*row['zcentroid'])
             if 0 <= x < deformation_field.shape[2] and 0 <= y < deformation_field.shape[1] and 0 <= z < deformation_field.shape[0]:
@@ -101,6 +101,7 @@ def main():
         print(f"$ Found these files to process: {deformation_files}")
         
     for deformation_file in deformation_files:
+        print("="*80)
         match = re.match(regex_pattern, deformation_file)
         if match:
             cycle = match.group('cycle')
