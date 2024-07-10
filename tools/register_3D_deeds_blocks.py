@@ -7,7 +7,7 @@ installations
 
 conda create -y -n deeds python==3.11
 pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
-pip install SimpleITK numpy psutil h5py
+pip install SimpleITK numpy psutil h5py scipy
 
 marcnol, July 2024
 
@@ -18,6 +18,7 @@ import SimpleITK as sitk
 import numpy as np
 import psutil
 import h5py
+from scipy.ndimage import shift as shift_image
 from deeds import registration_imwarp_fields
 
 def read_image(file_path):
@@ -131,6 +132,7 @@ def main():
     parser.add_argument('--factors', type=int, nargs=2, default=[2, 2], help='Factors to split the image (y, x). Default: 2 2 (two blocks by two blocks)')
     parser.add_argument('--alpha', type=float, default=1.6, help='alpha factor. Default=1.6')
     parser.add_argument('--levels', type=int, default=5, help='number of levels. Default=5')
+    parser.add_argument('--shifts', type=float, nargs=3, default=[0, 0, 0], help='Shifts to apply to the moving image in XYZ plane before registration. Default: [0, 0, 0]')
     parser.add_argument("--verbose", help="Default=False", action='store_true')
 
     args = parser.parse_args()
@@ -144,8 +146,12 @@ def main():
     fixed_image_np = to_numpy(fixed_image)
     moving_image_np = to_numpy(moving_image)
     
-    print(f"Reading images: \n Reference: {args.reference}:{fixed_image_np.shape}\n Moving: {args.moving}:{moving_image_np.shape}")
+    # Apply 3D shift to the moving image
+    shift_3d = np.zeros((3))
+    shift_3d[0], shift_3d[1], shift_3d[2] = args.shifts[2], args.shifts[0], args.shifts[1]
+    moving_image_np = shift_image(moving_image_np, shift_3d)
 
+    print(f"Reading images: \n Reference: {args.reference}:{fixed_image_np.shape}\n Moving: {args.moving}:{moving_image_np.shape}")
     print_memory_usage("Before splitting")
 
     # Split images into blocks
