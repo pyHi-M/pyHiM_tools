@@ -59,6 +59,7 @@ def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2)
     
     print(f"$ applying registrations to {len(localizations)} localizations")
 
+    counter=0
     for row in localizations:
         barcode_number=int(row["Barcode #"])
         if barcode_id == barcode_number:
@@ -70,25 +71,13 @@ def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2)
                 row['xcentroid'] += -dx
                 row['ycentroid'] += -dy
                 row['zcentroid'] += -dz/z_binning
-                print(f"$ Correcting {row['Buid']} barcode: {row['Barcode #']}| rxyz-final = ({row['xcentroid']},{row['ycentroid']},{row['zcentroid']}, dxyz={dx},{dy},{dz})")
-                    
-                 
-    return localizations
-'''
-    for idx,localizations_barcode in enumerate(loc_table_indexed.groups):
-        barcode_number=int(list(set(localizations_barcode["Barcode #"]))[0])
-        if barcode_id == barcode_number:
-            print(f"$ Registering barcode: {barcode_number}")            
+                #print(f"$ Correcting {row['Buid']} barcode: {row['Barcode #']}| rxyz-final = ({row['xcentroid']},{row['ycentroid']},{row['zcentroid']}, dxyz={dx},{dy},{dz})")
+                counter+=1
                 
-            for i, loc in enumerate(localizations_barcode):
-                x, y, z = int(loc['xcentroid']), int(loc['ycentroid']), int(z_binning*loc['zcentroid'])
-                if 0 <= x < deformation_field.shape[2] and 0 <= y < deformation_field.shape[1] and 0 <= z < deformation_field.shape[0]:
-                    dz, dy, dx = deformation_field[z, y, x]
-                    localizations_barcode['xcentroid'][i] += -dx
-                    localizations_barcode['ycentroid'][i] += -dy
-                    localizations_barcode['zcentroid'][i] += -dz/z_binning
-                    print(f"$ Correcting {loc['Buid']} barcode: {loc['Barcode #']}| rxyz-final = ({localizations_barcode['xcentroid'][i]},{localizations_barcode['ycentroid'][i]},{localizations_barcode['zcentroid'][i]}, dxyz={dx},{dy},{dz})")
-'''
+    print(f"$ Corrected {counter} localizations.")
+    
+    return localizations
+
 
 def main():
     # Set up argument parser
