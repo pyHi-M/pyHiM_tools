@@ -4,7 +4,7 @@
 Apply deformation corrections to localizations based on barcode identity and deformation fields.
 
 Usage:
-    python apply_deformation_to_localizations.py --localizations localizations.fits --deformation_folder /path/to/deformation_folder --output corrected_localizations.fits
+    apply_deformation_to_localizations.py --localizations localizations_3D_barcode_0.dat --deformation_folder /path/to/deformation_folder --output localizations_3D_barcode.dat
 
 Installation environment:
 
@@ -54,8 +54,6 @@ import tqdm
 
 def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2):
     """Apply deformation corrections to localizations."""
-    
-    #corrected_localizations = localizations.copy()
     
     print(f"$ applying registrations to {len(localizations)} localizations")
 
