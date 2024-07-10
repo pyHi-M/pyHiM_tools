@@ -101,7 +101,7 @@ def main():
         print(f"$ Found these files to process: {deformation_files}")
         
     for deformation_file in deformation_files:
-        print("="*80)
+        print("-"*80)
         match = re.match(regex_pattern, deformation_file)
         if match:
             cycle = match.group('cycle')
