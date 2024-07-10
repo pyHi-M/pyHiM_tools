@@ -19,7 +19,7 @@ import numpy as np
 import SimpleITK as sitk
 import h5py
 from astropy.table import Table
-import tqdm
+from tqdm import tqdm
 
 def read_localizations(file_path):
     """Read a localizations table from a file."""
