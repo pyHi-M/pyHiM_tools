@@ -139,20 +139,21 @@ def main():
 
     files_to_process = []
     for file in files:
-        match_RT = re.match(regex_pattern_RT, file)
-        match_other = re.match(regex_pattern_other, file)
-        
-        if match_RT:
-            match = match_RT
-        elif match_other:   
-            match = match_other
+        if file != reference_file:
+            match_RT = re.match(regex_pattern_RT, file)
+            match_other = re.match(regex_pattern_other, file)
+            
+            if match_RT:
+                match = match_RT
+            elif match_other:   
+                match = match_other
 
-        cycle = match.group('cycle')
-        channel = match.group('channel')
+            cycle = match.group('cycle')
+            channel = match.group('channel')
 
-        if channel == args.channel:
-            files_to_process.append(file)  
-            print(f"$ Decoded filename: channel {channel}: cycle:{cycle}")
+            if channel == args.channel:
+                files_to_process.append(file)  
+                print(f"$ Decoded filename: channel {channel}: cycle:{cycle}")
 
     # Process the found files
     process_files(files_to_process, reference_file, shifts_dict)
