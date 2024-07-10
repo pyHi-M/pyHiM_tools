@@ -147,6 +147,7 @@ def main():
     moving_image_np = to_numpy(moving_image)
     
     # Apply 3D shift to the moving image
+    print(f"$ Shifting image using: {shifts}")
     shift_3d = np.zeros((3))
     shift_3d[0], shift_3d[1], shift_3d[2] = args.shifts[2], args.shifts[0], args.shifts[1]
     moving_image_np = shift_image(moving_image_np, shift_3d)
