@@ -105,7 +105,7 @@ def main():
     parser.add_argument('-b', '--barcodes_to_register', nargs='+', help='List of barcodes to register (e.g., 16 18 20).')
     parser.add_argument('--reference_file', required=True, help='Reference file for the registration.')
     parser.add_argument('--channel', default='ch00', help='Channel to process. Default: ch00')
-    parser.add_argument('--shifts_file', default='shifts.json', help='Path to the JSON file containing pre-computed shifts.')
+    parser.add_argument('--shifts_file', default='register_global/data/shifts.json', help='Path to the JSON file containing pre-computed shifts.')
 
     args = parser.parse_args()
 
