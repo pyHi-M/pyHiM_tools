@@ -39,7 +39,7 @@ Updated by OpenAI's GPT-4
 Author: marcnol
 """
 
-from tifffile import imread, imsave
+from tifffile import imread, imwrite
 import numpy as np
 from skimage.measure import regionprops, label
 import argparse
@@ -66,7 +66,7 @@ def save_image(image, file_path):
     elif file_path.endswith('.npy'):
         np.save(file_path, image)
     else:
-        imsave(file_path, image)
+        imwrite(file_path, image)
 
 def parseArguments():
     parser = argparse.ArgumentParser()
