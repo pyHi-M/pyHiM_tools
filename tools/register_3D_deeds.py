@@ -9,6 +9,8 @@ conda create -y -n deeds python==3.11
 pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
 pip install SimpleITK numpy psutil
 
+Note: this code crashes if images are too large. I recommend using register_3D_deeds_blocks.py for large images
+
 marcnol, july 2024
 
 '''
