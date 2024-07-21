@@ -5,6 +5,24 @@
 import SimpleITK as sitk
 import argparse
 
+'''
+installations
+
+conda create -y -n sitk_env python==3.11
+pip install SimpleITK numpy 
+
+This script performs deformable registration of two 3D images using SimpleITK.
+It first performs an initial rigid alignment using translations and rotations, and then refines the alignment using a B-spline transformation for deformable registration. 
+The script also computes and saves the displacement field. The aligned image and the displacement field are saved in the specified output files.
+
+Usage:
+python align_3d_bspline.py --reference reference_image.tif --moving moving_image.tif --output aligned_image.tif --displacement_field displacement_field.tif
+
+marcnol, july 2024
+
+'''
+
+
 def read_image(file_path):
     """Read an image from file."""
     return sitk.ReadImage(file_path)

@@ -9,6 +9,30 @@ conda create -y -n deeds python==3.11
 pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
 pip install SimpleITK numpy psutil h5py scipy
 
+This script performs block-wise deformable registration of two 3D images using the DEEDS method. 
+
+It supports initial rigid translation of the moving image and allows the results to be saved in different formats (TIF, NII, H5). 
+
+The script is optimized to handle large images by splitting them into smaller blocks to avoid memory issues.
+
+Usage:
+
+python align_3d_images_deeds.py --reference reference_image.tif --moving moving_image.tif --output aligned_image.tif --displacement_field displacement_field.h5 --displacement_format h5 --factors 2 2 --alpha 1.6 --levels 5 --shifts 10 20 30 --verbose
+
+
+Explanation of Arguments
+
+    --reference: Path to the reference (fixed) image file.
+    --moving: Path to the moving image file.
+    --output: Path to the output (aligned) image file.
+    --displacement_field: Path to save the displacement field image file.
+    --displacement_format: Format to save the displacement field. Options: tif, nii, h5. Default is h5.
+    --factors: Factors to split the image (y, x). Default: 2 2 (two blocks by two blocks).
+    --alpha: Alpha factor for the registration. Default: 1.6.
+    --levels: Number of levels for the registration. Default: 5.
+    --shifts: Shifts to apply to the moving image in XYZ plane before registration. Default: [0, 0, 0].
+    --verbose: Verbose output. Default: False.
+
 marcnol, July 2024
 
 '''

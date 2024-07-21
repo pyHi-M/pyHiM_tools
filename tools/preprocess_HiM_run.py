@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 
+Organize files into ROI folders based on filename pattern and create symbolic links.
+
+This script is used as a pre-processing step before launching pyHiM in separate folders.
+
 Explanation:
 
     Default input_dir:

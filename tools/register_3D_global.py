@@ -8,6 +8,15 @@ installations
 conda create -y -n sitk_env python==3.11
 pip install SimpleITK numpy psutil
 
+This script performs global rigid alignment of two 3D images using SimpleITK.
+It uses translation only to align the moving image to the reference image.
+It does NOT rotate the image.
+The script also saves the translation parameters to a JSON file.
+The aligned image is saved in the specified output file.
+
+Usage:
+python align_3d_translation_only.py --reference reference_image.tif --moving moving_image.tif --output aligned_image.tif
+
 marcnol, july 2024
 
 '''

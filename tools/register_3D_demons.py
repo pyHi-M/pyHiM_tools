@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# 
-
 
 import SimpleITK as sitk
 import argparse
-import SimpleITK as sitk
-import argparse
+import psutil
+
+'''
+
+This code will run the demons anisotropic deformation model to align two images in 3D
+
+this version performs downsampling 
+
+marcnol, july 2024
+
+'''
 
 def read_image(file_path):
     """Read an image from file."""
@@ -25,13 +32,21 @@ def get_transform_parameters(transform):
     else:
         return None, None
 
+def print_memory_usage(step):
+    """Prints the current memory usage."""
+    process = psutil.Process()
+    memory_info = process.memory_info()
+    print(f"{step} - Memory usage: {memory_info.rss / (1024 * 1024):.2f} MB")
+
 def align_images(fixed_image, moving_image):
     """Align the moving_image to the fixed_image using a Demons transformation and return the transformation details."""
+    print_memory_usage("Before initial transform")
+
     # Initial alignment using a rigid transformation
     initial_transform = sitk.CenteredTransformInitializer(fixed_image, 
-                                                        moving_image, 
-                                                        sitk.Euler3DTransform(), 
-                                                        sitk.CenteredTransformInitializerFilter.GEOMETRY)
+                                                          moving_image, 
+                                                          sitk.Euler3DTransform(), 
+                                                          sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
     # Set up the registration framework for rigid transformation
     registration_method = sitk.ImageRegistrationMethod()
@@ -58,8 +73,10 @@ def align_images(fixed_image, moving_image):
 
     # Execute the initial registration
     final_transform = registration_method.Execute(sitk.Cast(fixed_image, sitk.sitkFloat32), 
-                                    sitk.Cast(moving_image, sitk.sitkFloat32))
+                                                  sitk.Cast(moving_image, sitk.sitkFloat32))
     
+    print_memory_usage("After initial transform")
+
     # Extract translation and rotation parameters
     translation, rotation = get_transform_parameters(final_transform)
 
@@ -69,9 +86,11 @@ def align_images(fixed_image, moving_image):
     demons_filter.SetStandardDeviations(1.0)
 
     displacement_field = demons_filter.Execute(sitk.Cast(fixed_image, sitk.sitkFloat32), 
-                                            sitk.Cast(moving_image, sitk.sitkFloat32))
+                                               sitk.Cast(moving_image, sitk.sitkFloat32))
     
     displacement_transform = sitk.DisplacementFieldTransform(displacement_field)
+    
+    print_memory_usage("After Demons registration")
     
     return final_transform, translation, rotation, displacement_transform
 
@@ -85,6 +104,29 @@ def resample_image(moving_image, transform, reference_image):
     
     return resampler.Execute(moving_image)
 
+def downsample_image(image, factor):
+    """Downsample the image by the given factor."""
+    size = [int(dim / factor) for dim in image.GetSize()]
+    return sitk.Resample(image, size, sitk.Transform(), sitk.sitkLinear,
+                         image.GetOrigin(), [spacing * factor for spacing in image.GetSpacing()],
+                         image.GetDirection(), 0, image.GetPixelID())
+
+def convert_to_supported_type(image):
+    """Convert image to a supported type for TIFF."""
+    pixel_type = image.GetPixelID()
+    if pixel_type in [sitk.sitkUInt8, sitk.sitkInt8, sitk.sitkUInt16, sitk.sitkInt16, sitk.sitkFloat32]:
+        return image
+    else:
+        return sitk.Cast(image, sitk.sitkFloat32)
+
+def convert_displacement_field_to_supported_type(displacement_field):
+    """Convert each component of the displacement field to a supported type for TIFF."""
+    components = []
+    for i in range(displacement_field.GetNumberOfComponentsPerPixel()):
+        component_image = sitk.VectorIndexSelectionCast(displacement_field, i, sitk.sitkFloat32)
+        components.append(component_image)
+    return sitk.Compose(components)
+
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Align two 3D images using SimpleITK.")
@@ -94,36 +136,46 @@ def main():
     parser.add_argument('--displacement_field', required=True, help='Path to save the displacement field image file.')
 
     args = parser.parse_args()
-    print(f"$ Reading images: \n Reference: {args.reference}\n Moving: {args.moving}")
 
     # Read the images
     fixed_image = read_image(args.reference)
     moving_image = read_image(args.moving)
+    print(f"$ Reading images: \n Reference: {args.reference}\n Moving: {args.moving}")
+
+    print_memory_usage("Before downsampling")
     
+    # Downsample images to reduce memory usage
+    fixed_image_ds = downsample_image(fixed_image, 2)
+    moving_image_ds = downsample_image(moving_image, 2)
+    
+    print_memory_usage("After downsampling")
+
     # Align the images
     print("$ Aligning images in 3D...")
 
-    initial_transform, translation, rotation, displacement_field = align_images(fixed_image, moving_image)
-    
-    # Apply the initial rigid transform
-    moving_image_resampled = resample_image(moving_image, initial_transform, fixed_image)
+    final_transform, translation, rotation, displacement_transform = align_images(fixed_image_ds, moving_image_ds)
 
-    # Apply the deformation field using displacement filter
+    # Apply the initial rigid transform
     print("$ Resampling ...")
-    displacement_filter = sitk.TransformToDisplacementFieldFilter()
-    displacement_filter.SetReferenceImage(fixed_image)
-    displacement_filter.SetTransform(sitk.DisplacementFieldTransform(displacement_field))
+
+    moving_image_resampled = resample_image(moving_image, final_transform, fixed_image)
+
+    # Apply the deformation field using displacement transform
+    deformed_image = resample_image(moving_image_resampled, displacement_transform, fixed_image)
     
-    deformed_image = displacement_filter.Execute(moving_image_resampled)
-    
+    # Convert images to supported type for TIFF
+    deformed_image = convert_to_supported_type(deformed_image)
+    displacement_field_image = convert_displacement_field_to_supported_type(displacement_transform.GetDisplacementField())
+
     # Save the result
     write_image(deformed_image, args.output)
-    write_image(displacement_field, args.displacement_field)
+    write_image(displacement_field_image, args.displacement_field)
     print(f"Aligned image saved to {args.output}")
     print(f"Displacement field saved to {args.displacement_field}")
-    print("Initial Transform Parameters:")
-    print(f"Translation (XYZ): {translation}")
-    print(f"Rotation (radians, XYZ): {rotation}")
+    if translation and rotation:
+        print("Initial Transform Parameters:")
+        print(f"Translation (XYZ): {translation}")
+        print(f"Rotation (radians, XYZ): {rotation}")
 
 if __name__ == "__main__":
     main()

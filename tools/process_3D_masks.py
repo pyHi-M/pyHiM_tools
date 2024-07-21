@@ -6,7 +6,9 @@ Created on Mon Feb  7 13:40:38 2022
 @author: marcnol
 
 This script will 2D project the 3D labeled numpy arrays produced by segmentMasks3D and replace those produced by segmentMasks
-s
+
+Note: this is now performed within pyHiM for mask_cellpose.py
+
 """
 
 import argparse
