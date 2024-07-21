@@ -3,7 +3,7 @@
 """
 Created on Sat Sep 10 10:42:15 2022
 
-Shifts image by a given amount in XY
+Shifts image by a given amount in XYZ
 
 @author: marcnol
 """
