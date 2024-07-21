@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-This script analyzes a mask file provided by the user. 
+This script analyzes a mask file provided by the user and optionally the corresponding intensity image. 
 No changes are made to the mask file.
 
 The script loads an input file with masks and plots:
@@ -9,6 +9,7 @@ The script loads an input file with masks and plots:
 - Mean diameter
 - Mean area
 - Maximum diameter
+- Intensity histogram for masks (if intensity image is provided)
 
 as a function of the z position.
 
@@ -18,15 +19,16 @@ Known problems with scikit-image < 0.19:
     $ conda install -c anaconda scikit-image
 
 Usage:
-    python analyze_mask.py --input input_file --output output_dataset
+    python analyze_mask.py --input input_file --output output_dataset [--intensity original_intensity_image]
 
 Example:
-    python analyze_mask.py --input mask.tif --output mask_analysis
+    python analyze_mask.py --input mask.tif --output mask_analysis --intensity original.tif
 
 Arguments:
-    --input        Name of the input file (TIFF, NPY, or HDF5 format).
+    --input        Name of the input mask file (TIFF, NPY, or HDF5 format).
     --output       Name of the output dataset file name (optional).
     --pipe         Inputs file list from stdin (pipe) (optional).
+    --intensity    Name of the original intensity image file (TIFF, NPY, or HDF5 format) (optional).
 
 Installation:
     conda create -y -n mask_analysis python==3.11
@@ -67,6 +69,7 @@ def parseArguments():
     parser.add_argument("--input", help="Name of input file (TIFF, NPY, or HDF5 format).")
     parser.add_argument("--output", help="Name of output dataset file name.")
     parser.add_argument("--pipe", help="Inputs file list from stdin (pipe)", action="store_true")
+    parser.add_argument("--intensity", help="Name of the original intensity image file (TIFF, NPY, or HDF5 format) (optional).")
 
     args = parser.parse_args()
 
@@ -82,6 +85,11 @@ def parseArguments():
     else:
         p["output_dataset"] = None
 
+    if args.intensity:
+        p["intensity"] = args.intensity
+    else:
+        p["intensity"] = None
+
     p["files"] = []
     if args.pipe:
         p["pipe"] = True
@@ -95,8 +103,8 @@ def parseArguments():
 
     return p
 
-def plots(datasets, xlabels, ylabels, titles):
-    number_plots = len(datasets)
+def plots(datasets, xlabels, ylabels, titles, intensity_data=None):
+    number_plots = len(datasets) + (1 if intensity_data is not None else 0)
     fig = plt.figure(constrained_layout=True)
     im_size = 10
     fig.set_size_inches((im_size * number_plots, im_size))
@@ -109,11 +117,18 @@ def plots(datasets, xlabels, ylabels, titles):
         axis.set_ylabel(ylabel)
         axis.set_title(title)
 
-def analyze_masks_z(im, output='tmp.png', output_dataset=None):
+    if intensity_data is not None:
+        axes[-1].hist(intensity_data, bins=50, color='r', alpha=0.7)
+        axes[-1].set_xlabel('Intensity')
+        axes[-1].set_ylabel('Frequency')
+        axes[-1].set_title('Intensity Histogram for Masks')
+
+def analyze_masks_z(im, intensity_im=None, output='tmp.png', output_dataset=None):
     print('> Analyzing mask in z ... ')
 
     datasets, xlabels, ylabels, titles = [], [], [], []
     N_planes, dim_y, dim_x = im.shape[0], im.shape[1], im.shape[2]
+    all_intensities = []
 
     # calculates distribution of masks in z
     N_nonzero_pixels = [np.count_nonzero(im[plane, :, :]) / (dim_x * dim_y) for plane in range(N_planes)]
@@ -126,12 +141,14 @@ def analyze_masks_z(im, output='tmp.png', output_dataset=None):
     # area equivalent_diameter_area
     min_area, max_area, mean_equivalent_diameter_area, all_areas = [], [], [], []
     for plane in range(N_planes):
-        region = regionprops(im[plane, :, :])
+        region = regionprops(im[plane, :, :], intensity_image=intensity_im[plane, :, :] if intensity_im is not None else None)
         areas, equivalent_diameter_areas = [], []
         for idx in range(len(region)):
             areas.append(region[idx].area)
             equivalent_diameter_areas.append(region[idx].equivalent_diameter_area)
             all_areas.append(region[idx].equivalent_diameter_area)
+            if intensity_im is not None:
+                all_intensities.append(region[idx].mean_intensity)
         min_area.append(np.min(areas))
         max_area.append(np.max(equivalent_diameter_areas))
         mean_equivalent_diameter_area.append(np.mean(equivalent_diameter_areas))
@@ -147,7 +164,7 @@ def analyze_masks_z(im, output='tmp.png', output_dataset=None):
     titles.append('max diameter distribution')
         
     # plots
-    plots(datasets, xlabels, ylabels, titles)
+    plots(datasets, xlabels, ylabels, titles, intensity_data=all_intensities if intensity_im is not None else None)
     plt.savefig(output)
 
     # saves output datasets for further processing
@@ -157,16 +174,21 @@ def analyze_masks_z(im, output='tmp.png', output_dataset=None):
         np.savez(output_data_filename, datasets)
         print(f"$ output data saved to: {output_data_filename}")
 
-def process_images(files=list(), output_dataset=None):
+def process_images(files=list(), intensity_file=None, output_dataset=None):
     if len(files) > 0 and files[0] is not None:
         print("\n{} files to process= <{}>".format(len(files), "\n".join(map(str, files))))
+
+        intensity_im = None
+        if intensity_file is not None:
+            print(f"$ Loading intensity file: {intensity_file}")
+            intensity_im = read_image(intensity_file)
 
         # iterates over images in folder
         for file in files:
             print(f"> Analyzing image {file}")
             im = read_image(file)
             output = file.split('.')[0] + '_mask_stats.png'
-            analyze_masks_z(im, output=output, output_dataset=output_dataset) 
+            analyze_masks_z(im, intensity_im=intensity_im, output=output, output_dataset=output_dataset)
             print(f"\n>>> Analysis saved: {output}")
     else:
         print("! Error: did not find any file to analyze. Please provide one using --input or --pipe.")
@@ -178,7 +200,7 @@ def main():
     print("Remember to activate environment!\n")
 
     # [loops over lists of data folders]
-    process_images(files=p['files'], output_dataset=p['output_dataset'])
+    process_images(files=p['files'], intensity_file=p['intensity'], output_dataset=p['output_dataset'])
         
     print("Finished execution")
 
