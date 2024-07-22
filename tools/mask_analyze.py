@@ -71,7 +71,7 @@ def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", help="Name of input file (TIFF, NPY, or HDF5 format).")
     parser.add_argument("--output", help="Name of output dataset file name.")
-    parser.add_argument("--intensity", help="Name of the original intensity image file (optional).")
+    parser.add_argument("--intensity_image", help="Name of the original intensity image file (optional).")
     parser.add_argument("--pipe", help="Inputs file list from stdin (pipe)", action="store_true")
 
     args = parser.parse_args()
@@ -88,8 +88,8 @@ def parseArguments():
     else:
         p["output_dataset"] = None
 
-    if args.intensity:
-        p["intensity"] = args.intensity
+    if args.intensity_image:
+        p["intensity"] = args.intensity_image
     else:
         p["intensity"] = None
 

@@ -80,7 +80,7 @@ def parseArguments():
     parser.add_argument("--max_z", type=int, help="Maximum z position of masks to keep.")
     parser.add_argument("--num_pixels", type=float, help="Minimum number of pixels in masks to keep.")
     parser.add_argument("--max_intensity", type=float, help="Maximum intensity of masks to keep in the original image.")
-    parser.add_argument("--original", help="Name of original intensity image file (TIFF, NPY, or HDF5 format) if max_intensity is specified.")
+    parser.add_argument("--intensity_image", help="Name of original intensity image file (TIFF, NPY, or HDF5 format) if max_intensity is specified.")
 
     args = parser.parse_args()
 
@@ -125,11 +125,11 @@ def main():
 
     original_im = None
     if args.max_intensity is not None:
-        if not args.original:
+        if not args.intensity_image:
             print("Error: Original image file must be provided if max_intensity is specified.")
             sys.exit(1)
-        print(f"$ Loading original intensity image file: {args.original}")
-        original_im = read_image(args.original)
+        print(f"$ Loading original intensity image file: {args.intensity_image}")
+        original_im = read_image(args.intensity_image)
 
     print("$ Filtering masks...")
     filtered_image = filter_masks(im, original_im, args.min_diameter, args.max_diameter, args.min_z, args.max_z, args.num_pixels, args.max_intensity)
