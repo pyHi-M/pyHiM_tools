@@ -58,7 +58,7 @@ def parseArguments():
     parser.add_argument("-F", "--input", help="Input file (TIFF or HDF5 format)", required=True)
     parser.add_argument("--shift_x", help="Shift image in x direction (number of pixels)", type=float, default=0.0)
     parser.add_argument("--shift_y", help="Shift image in y direction (number of pixels)", type=float, default=0.0)
-    parser.add_argument("--shift_z", help="Shift image in z direction (number of pixels)", type=float, default 0.0)
+    parser.add_argument("--shift_z", help="Shift image in z direction (number of pixels)", type=float, default=0.0)
     
     args = parser.parse_args()
 
