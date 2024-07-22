@@ -46,6 +46,7 @@ import argparse
 import h5py
 import sys
 import shutil
+from tqdm import trange
 
 def read_image(file_path):
     """Read an image from a file (TIFF, NPY, or HDF5)."""
@@ -77,7 +78,7 @@ def parseArguments():
     parser.add_argument("--max_diameter", type=float, help="Maximum diameter of masks to keep.")
     parser.add_argument("--min_z", type=int, help="Minimum z position of masks to keep.")
     parser.add_argument("--max_z", type=int, help="Maximum z position of masks to keep.")
-    parser.add_argument("--eccentricity", type=float, help="Maximum eccentricity of masks to keep.")
+    parser.add_argument("--num_pixels", type=float, help="Minimum number of pixels in masks to keep.")
     parser.add_argument("--max_intensity", type=float, help="Maximum intensity of masks to keep in the original image.")
     parser.add_argument("--original", help="Name of original intensity image file (TIFF, NPY, or HDF5 format) if max_intensity is specified.")
 
@@ -88,21 +89,31 @@ def parseArguments():
 
     return args
 
-def filter_masks(im, original_im=None, min_diameter=None, max_diameter=None, min_z=None, max_z=None, max_eccentricity=None, max_intensity=None):
-    filtered_image = np.zeros_like(im)
-    for plane in range(im.shape[0]):
+def filter_masks(labeled_image, original_im=None, min_diameter=None, max_diameter=None, min_z=None, max_z=None, num_pixels=None, max_intensity=None):
+    # removes bottom and top planes from labeled image
+    
+    print("$ filtering out bottom and top planes")
+    for plane in trange(labeled_image.shape[0]):
         if (min_z is not None and plane < min_z) or (max_z is not None and plane > max_z):
-            continue
-        labeled_mask = label(im[plane, :, :])
-        regions = regionprops(labeled_mask, intensity_image=original_im[plane, :, :] if original_im is not None else None)
-        for region in regions:
-            if (min_diameter is not None and region.equivalent_diameter < min_diameter) or \
-               (max_diameter is not None and region.equivalent_diameter > max_diameter) or \
-               (max_eccentricity is not None and region.eccentricity > max_eccentricity) or \
-               (max_intensity is not None and region.max_intensity > max_intensity):
-                continue
-            filtered_image[plane, :, :] += (labeled_mask == region.label)
-    return filtered_image
+            labeled_image[plane,:,:] = 0
+            
+            
+    print("$ filtering out min/max diameters, num_pixels, max_intensity")            
+    mask = np.zeros(labeled_image.shape, dtype=bool)
+    regions = regionprops(labeled_image, intensity_image=original_im if original_im is not None else None)
+
+    for region in regions:
+        if (min_diameter is not None and region.equivalent_diameter > min_diameter) or \
+            (max_diameter is not None and region.equivalent_diameter < max_diameter) or \
+            (num_pixels is not None and region.area < num_pixels) or \
+            (max_intensity is not None and region.max_intensity > max_intensity):
+    
+            mask[labeled_image == region.label] = True
+
+    # Set the identified regions to zero
+    labeled_image[mask] = 0
+
+    return labeled_image
 
 def main():
     args = parseArguments()
@@ -121,7 +132,7 @@ def main():
         original_im = read_image(args.original)
 
     print("$ Filtering masks...")
-    filtered_image = filter_masks(im, original_im, args.min_diameter, args.max_diameter, args.min_z, args.max_z, args.eccentricity, args.max_intensity)
+    filtered_image = filter_masks(im, original_im, args.min_diameter, args.max_diameter, args.min_z, args.max_z, args.num_pixels, args.max_intensity)
 
     if args.replace_mask_file:
         backup_file = args.input.replace('.tif', '_original.tif').replace('.npy', '_original.npy').replace('.h5', '_original.h5')

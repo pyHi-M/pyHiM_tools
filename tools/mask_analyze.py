@@ -46,7 +46,6 @@ from matplotlib.pylab import plt
 import matplotlib
 import numpy as np
 from skimage.measure import regionprops
-#from skimage.color import label2rgb
 from skimage import exposure
 import sys
 import select
@@ -107,13 +106,15 @@ def parseArguments():
 
     return p
 
-def random_label_cmap():
+def random_label_cmap(N=255):
     """Create a random colormap for labels."""
+    """from matplotlib.colors import ListedColormap"""
+
+    from random import random
     from matplotlib.colors import ListedColormap
-    import random
-    cmap = np.random.rand(256, 3)
-    cmap[0] = [0, 0, 0]
-    return ListedColormap(cmap)
+    
+    colors = [(0, 0, 0)] + [(random(), random(), random()) for _ in range(N)]
+    return ListedColormap(colors)
 
 def plot_raw_images_and_labels(image, label, ax,percentile=99.9):
     """
@@ -125,23 +126,41 @@ def plot_raw_images_and_labels(image, label, ax,percentile=99.9):
     label : numpy ndarray
         3D labeled image.
     """
+    from scipy import ndimage
+    from scipy.ndimage import label as nd_label
 
-    cmap = random_label_cmap()
-    moy = np.mean(image, axis=0)
-    high_val = np.percentile(moy, percentile)
-    
-    # Rescale intensity values to saturate high values
-    moy = exposure.rescale_intensity(moy,  in_range=(0, high_val), out_range=(0, 1))
-    
-    lbl_moy = label #np.max(label, axis=0)
+    start_idx=0
+    if image is not None:
+        moy = np.mean(image, axis=0)
+        high_val = np.percentile(moy, percentile)
 
-    ax[0].imshow(moy, cmap="jet", origin="lower")
-    ax[1].imshow(lbl_moy, cmap=cmap, origin="lower")
-    ax[0].set_title("Raw Image")
-    ax[1].set_title("Projected Labeled Image")
+        # Rescale intensity values to saturate high values
+        moy = exposure.rescale_intensity(moy,  in_range=(0, high_val), out_range=(0, 1))
+        ax[0].imshow(moy, cmap="jet", origin="lower")
+        ax[0].set_title("Raw Image")
+        start_idx=1
+            
+    #lbl_moy = label #np.max(label, axis=0)
+    #lbl_moy, number_of_blobs = ndimage.label(label)
+    #labeled_image, number_of_labels = nd_label(label)
+
+    number_of_labels=np.max(label)
+    cmap = random_label_cmap(N=number_of_labels + 1)
+
+    ax[start_idx].imshow(label, cmap=cmap, origin="lower")
+    ax[start_idx].set_title("Projected Labeled Image")
 
 def plots(datasets, xlabels, ylabels, titles, mask_image=None, intensity_im=None):
-    number_plots = len(datasets) + (1 if intensity_im is not None else 0)
+
+    if mask_image is not None:
+        if intensity_im is not None:        
+            start_idx = 2
+        else:
+            start_idx = 1
+    else:
+        start_idx = 0
+
+    number_plots = start_idx + 4 #len(datasets) + (1 if intensity_im is not None else 0)
     fig = plt.figure(constrained_layout=True)
     im_size = 10
     fig.set_size_inches((im_size * number_plots, im_size))
@@ -149,21 +168,27 @@ def plots(datasets, xlabels, ylabels, titles, mask_image=None, intensity_im=None
     axes = [fig.add_subplot(gs[0, i]) for i in range(number_plots)]
 
     if mask_image is not None:
-        if intensity_im is not None:
-            plot_raw_images_and_labels(intensity_im, mask_image, axes[:2])
-            start_idx = 2
-        else:
-            plot_raw_images_and_labels(np.zeros_like(mask_image), mask_image, axes[:2])
-            start_idx = 2
-    else:
-        start_idx = 0
+        plot_raw_images_and_labels(intensity_im, mask_image, axes[:2])
 
-    for idx, (dataset, xlabel, ylabel, title) in enumerate(zip(datasets, xlabels, ylabels, titles)):
+    N_datasets_z = 2
+    colors=['b','r','g','k']
+    for idx, (dataset, xlabel, ylabel, title) in enumerate(zip(datasets[0:N_datasets_z], xlabels[0:N_datasets_z], ylabels[0:N_datasets_z], titles[0:N_datasets_z])):
         axis = axes[start_idx + idx]
-        axis.plot(dataset, 'o-')
+        if isinstance(dataset, list) and all(isinstance(i, list) for i in dataset):            
+            for i, d in enumerate(dataset):
+                axis.plot(d, colors[i]+'o-')            
+        else:
+            axis.plot(dataset, 'o-')
         axis.set_xlabel(xlabel)
         axis.set_ylabel(ylabel)
         axis.set_title(title)
+
+    # histogram of 3D pixels
+    ax = axes[-2]
+    ax.hist(datasets[-2], bins=50, log=True)
+    ax.set_xlabel(xlabels[N_datasets_z])
+    ax.set_ylabel(ylabels[N_datasets_z])
+    ax.set_title(titles[N_datasets_z])
 
     if intensity_im is not None:
         ax = axes[-1]
@@ -199,26 +224,29 @@ def analyze_masks_z(im, intensity_im=None, output='tmp.png', output_dataset=None
         max_area.append(np.max(equivalent_diameter_areas) if equivalent_diameter_areas else 0)
         mean_equivalent_diameter_area.append(np.mean(equivalent_diameter_areas) if equivalent_diameter_areas else 0)
 
-    datasets.append(mean_equivalent_diameter_area)
-    xlabels.append('z, planes')
-    ylabels.append('mean diameter, px')
-    titles.append('mean diam distribution')
-
-    datasets.append(max_area)
+    datasets.append([mean_equivalent_diameter_area,min_area,max_area])
     xlabels.append('z, planes')
     ylabels.append('max diameter, px')
-    titles.append('max diameter distribution')
+    titles.append('mean/min/max diameters')
 
+    # Calculate number of pixels histogram
+    areas_3d = []
+    region_3d = regionprops(im)
+    for props in region_3d:
+        areas_3d.append(props.area)
+    datasets.append(areas_3d)
+    xlabels.append('number of pixels')
+    ylabels.append('Frequency')
+    titles.append('Number of pixels')
+
+    # Calculate intensity histogram
     mask_image = np.max(im, axis=0)
-
     if intensity_im is not None:
-        # Calculate intensity histogram
         intensities = []
         for plane in trange(N_planes):
             region = regionprops(im[plane, :, :], intensity_image=intensity_im[plane, :, :])
             for props in region:
                 intensities.append(props.mean_intensity)
-
         datasets.append(intensities)
 
     # Plot all datasets including mask image

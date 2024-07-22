@@ -17,6 +17,17 @@ The basic steps are:
 
 ### pyHiM
 
+Install pyHiM locally and add paths:
+
+```
+$ mkdir $HOME/Repositories && cd $HOME/Repositories
+$ git clone git@github.com:marcnol/pyHiM.git
+$ echo 'export PATH="$PATH:$HOME/Repositories/pyHiM/src"' >> ~/.bashrc
+$ echo 'export PATH="$PATH:$HOME/Repositories/pyHiM/src/postProcessing"' >> ~/.bashrc
+$ echo 'export PATH="$PATH:$HOME/Repositories/pyHiM/src/plots"' >> ~/.bashrc
+$ bash
+```
+
 Follow installation instructions [here](https://pyhim.readthedocs.io/en/latest/).
 
 ### pyHiM_tools
