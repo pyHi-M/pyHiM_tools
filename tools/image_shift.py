@@ -29,7 +29,7 @@ Updated by OpenAI's GPT-4
 
 import os, argparse, sys
 from skimage import io
-from tifffile import imsave
+from tifffile import imwrite
 import matplotlib.pylab as plt
 import numpy as np
 from scipy.ndimage import shift as shift_image
@@ -50,7 +50,7 @@ def write_image(image, file_path):
         with h5py.File(file_path, 'w') as f:
             f.create_dataset('image', data=image, compression='gzip')
     else:
-        imsave(file_path, image)
+        imwrite(file_path, image)
 
 def parseArguments():
     """Parse command-line arguments."""

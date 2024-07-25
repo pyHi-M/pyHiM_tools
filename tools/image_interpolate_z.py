@@ -67,7 +67,7 @@ def _remove_z_planes(image_3d, z_range):
     -------
     output: numpy array
     """
-    output = np.zeros((len(z_range), image_3d.shape[1], image_3d.shape[2]))
+    output = np.zeros((len(z_range), image_3d.shape[1], image_3d.shape[2]), dtype=image_3d.dtype)
     for i, index in enumerate(z_range):
         output[i, :, :] = image_3d[index, :, :]
 

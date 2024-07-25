@@ -20,16 +20,16 @@ Known problems with scikit-image < 0.19:
     $ conda install -c anaconda scikit-image
 
 Usage:
-    python analyze_mask.py --input input_file --output output_dataset [--intensity original_intensity_image]
+    python analyze_mask.py --input input_file --output output_dataset [--intensity_image original_intensity_image]
 
 Example:
-    python analyze_mask.py --input mask.tif --output mask_analysis --intensity original.tif
+    python analyze_mask.py --input mask.tif --output mask_analysis --intensity_image original.tif
 
 Arguments:
-    --input        Name of the input mask file (TIFF, NPY, or HDF5 format).
-    --output       Name of the output dataset file name (optional).
-    --intensity    Name of the original intensity image file (optional).
-    --pipe         Inputs file list from stdin (pipe) (optional).
+    --input              Name of the input mask file (TIFF, NPY, or HDF5 format).
+    --output             Name of the output dataset file name (optional).
+    --intensity_image    Name of the original intensity image file (optional).
+    --pipe               Inputs file list from stdin (pipe) (optional).
 
 Installation:
     conda create -y -n mask_analysis python==3.11
@@ -281,8 +281,6 @@ def process_images(files=list(), intensity_file=None, output_dataset=None):
 def main():
     # [parsing arguments]
     p = parseArguments()
-
-    print("Remember to activate environment!\n")
 
     # [loops over lists of data folders]
     process_images(files=p['files'], intensity_file=p['intensity'], output_dataset=p['output_dataset'])
