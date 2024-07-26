@@ -102,7 +102,8 @@ def filter_masks(labeled_image, original_im=None, min_diameter=None, max_diamete
     mask = np.zeros(labeled_image.shape, dtype=bool)
     regions = regionprops(labeled_image, intensity_image=original_im if original_im is not None else None)
 
-    print(f'$ Will filter {len(regions)} labels')
+    print(f'$ Will analyze {len(regions)} labels')
+    removed=0
     for region in regions:
         if (min_diameter is not None and region.equivalent_diameter < min_diameter) or \
             (max_diameter is not None and region.equivalent_diameter > max_diameter) or \
@@ -110,10 +111,12 @@ def filter_masks(labeled_image, original_im=None, min_diameter=None, max_diamete
             (min_intensity is not None and region.max_intensity < min_intensity):
     
             mask[labeled_image == region.label] = True
-
+            removed+=1
+            
     # Set the identified regions to zero
     labeled_image[mask] = 0
-
+    print(f'$ Removed {removed} labels')
+    
     return labeled_image
 
 def main():

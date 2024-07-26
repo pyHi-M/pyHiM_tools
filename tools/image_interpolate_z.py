@@ -4,10 +4,10 @@
 This script removes every other plane from a 3D image and saves the output in the same format with "_z_reinterpolated" appended to the filename.
 
 Usage:
-    python remove_z_planes.py --input input_file
+    python image_interpolate.py --input input_file
 
 Example:
-    python remove_z_planes.py --input image.tif
+    python image_interpolate.py --input image.tif
 
 Arguments:
     --input        Name of the input file (TIFF, NPY, or HDF5 format).

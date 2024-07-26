@@ -243,10 +243,9 @@ def analyze_masks_z(im, intensity_im=None, output='tmp.png', output_dataset=None
     mask_image = np.max(im, axis=0)
     if intensity_im is not None:
         intensities = []
-        for plane in trange(N_planes):
-            region = regionprops(im[plane, :, :], intensity_image=intensity_im[plane, :, :])
-            for props in region:
-                intensities.append(props.mean_intensity)
+        region_3d = regionprops(im,intensity_image=intensity_im)
+        for props in region_3d:
+            intensities.append(props.max_intensity)
         datasets.append(intensities)
 
     # Plot all datasets including mask image
