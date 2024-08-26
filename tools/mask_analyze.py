@@ -20,10 +20,10 @@ Known problems with scikit-image < 0.19:
     $ conda install -c anaconda scikit-image
 
 Usage:
-    python analyze_mask.py --input input_file --output output_dataset [--intensity_image original_intensity_image]
+    python mask_analyze.py --input input_file --output output_dataset [--intensity_image original_intensity_image]
 
 Example:
-    python analyze_mask.py --input mask.tif --output mask_analysis --intensity_image original.tif
+    python mask_analyze.py --input mask.tif --output mask_analysis --intensity_image original.tif
 
 Arguments:
     --input              Name of the input mask file (TIFF, NPY, or HDF5 format).
@@ -218,8 +218,12 @@ def analyze_masks_z(im, intensity_im=None, output='tmp.png', output_dataset=None
         areas, equivalent_diameter_areas = [], []
         for idx in range(len(region)):
             areas.append(region[idx].area)
-            equivalent_diameter_areas.append(region[idx].equivalent_diameter_area)
-            all_areas.append(region[idx].equivalent_diameter_area)
+            try:
+                equivalent_diameter = region[idx].equivalent_diameter_area
+            except AttributeError:
+                equivalent_diameter = region[idx].equivalent_diameter
+            equivalent_diameter_areas.append(equivalent_diameter)
+            all_areas.append(equivalent_diameter)
         min_area.append(np.min(areas) if areas else 0)
         max_area.append(np.max(equivalent_diameter_areas) if equivalent_diameter_areas else 0)
         mean_equivalent_diameter_area.append(np.mean(equivalent_diameter_areas) if equivalent_diameter_areas else 0)
