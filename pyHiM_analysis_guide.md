@@ -333,6 +333,69 @@ then run the bash script
 $ bash joblist_folder_with_ROIs.bash
 ```
 
+#### filtering 3D masks.
+
+Sometimes, either huygens or dw or both can oversegment 3d masks. This then creates a problem when performing chromatin tracing using masking. To deal with this issue, I created a script that can be run after `mask_3d` and before `build_traces`.
+
+The script is called `mask_filter.py` and takes one or multiple mask files and filters masks following several criteria, including:
+- intensity
+- minimum number of pixels
+- maximum number of pixels
+- position in z (i.e masks below or above thresholds will be excluded)
+
+Of course, you need to find what are the best values for these parameters. For this, I wrote `mask_analyze.py`. 
+
+Example:
+
+First take one ROI within your dataset and run
+
+```
+$ mask_analyze.py --input mask.tif --output mask_analysis --intensity_image original.tif
+```
+
+the mask.tif and original.tif files correspond to the mask and the intensity image filenames.
+
+Remember that if you are doing this on a mask obtained using pyHiM you need to shift and z-reinterpolate the intensity image first. For this, use `image_interpolate_z.py` and `image_shift.py`.
+
+Typical full example:
+
+```
+$ cd /home/marcnol/grey/ProcessedData_2024/Experiment_75_David_DNAFISH_HiM_HRKit_G1E_20240708/000
+
+# found out shift value
+$ python -c "import json; data = json.load(open('register_global/data/shifts.json')); print(list(data['ROI:000']['mask0']))"
+
+# I got: [-9.117377046678888, 0.24557377001056907]
+
+# shift intensity image
+$ shift_3d_image.py -F scan_002_mask0_000_ROI_converted_decon_ch01.tif --shift_x -9.1 --shift_y 0.24 --shift_z 0
+
+# interpolate in z
+$ image_interpolate.py --input scan_002_mask0_000_ROI_converted_decon_ch01_shifted.tif
+
+# run mask_analyze
+$ mask_analyze.py --input mask_3d/data/scan_002_mask0_000_ROI_converted_decon_ch01_3Dmasks.npy --intensity_image scan_002_mask0_000_ROI_converted_decon_ch01_shifted_z_reinterpolated.tif --replace_mask_file
+```
+
+This should produce plots within mask_3d/data/ that you can use to establish the threshold intensity, min_z, max_z and number of pixels per mask.
+
+You can verify how this worked by loading into napari:
+- original shifted/interpolated intensity image: scan_002_mask0_000_ROI_converted_decon_ch01_shifted_z_reinterpolated.tif
+- filtered masks at: mask_3d/data/scan_002_mask0_000_ROI_converted_decon_ch01_3Dmasks.npy
+- original masks at: mask_3d/data/scan_002_mask0_000_ROI_converted_decon_ch01_3Dmasks_original.npy
+
+If you are satisfied then you can apply these filters to a series of ROI. For this, move to the folder holding the ROIs, determine the `ls` command that will list all the `intensity mask images`, and run `mask_filter`:
+
+```
+$ cd /home/marcnol/grey/ProcessedData_2024/Experiment_75_David_DNAFISH_HiM_HRKit_G1E_20240708
+
+# list all intensity images to process:
+$ ls *mask0*ch01*
+
+# if you are happy with this list, then run mask filter on this list
+$ ls *mask0*ch01* | mask_filter.py --pipe --pyHiM --min_intensity 2000 --min_z 5 --max_z 20  --replace_mask_file
+```   
+
 
 ### Run DAPI segmentations using cellpose [optional]
 
