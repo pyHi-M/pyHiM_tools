@@ -229,9 +229,10 @@ def get_dict_shifts(folder):
 def main():
     args, files, pipe_status = parseArguments()
     
-    print("\n$ <{}> input file(s) to process= <{}>".format(len(files), "\n".join(map(str, files))))
+    print("\n$ <{}> input file(s) to process=\n {}".format(len(files), "\n".join(map(str, files))))
 
     for file in files:
+        
         if pipe_status:
             if args.pyHiM:
                 file_image = file
@@ -240,8 +241,13 @@ def main():
             else:
                 file_image = []
                 
-        print(f'$ mask file: {file}\n$ intensity file: {file_image}')   
+        if os.path.exists(file):
+            print('='*80+f'$ mask file: {file}')   
+        else:
+            print(f"! Error: mask file <{file}> not found, will move on to next file in line...")
+            continue
 
+        # backups file and sets saving paths
         if args.replace_mask_file:
             backup_file = file
             backup_file = backup_file.replace('.tif', '_original.tif').replace('.npy', '_original.npy').replace('.h5', '_original.h5')
@@ -254,9 +260,11 @@ def main():
             else:
                 save_path = file.replace('.tif','_filtered.tif').replace('.npy', '_filtered.npy').replace('.h5', '_filtered.h5')
         
+        # loads mask file
         print(f"$ Loading mask file: {file}")
         mask = read_image(file)
 
+        # load intensity image if necessary
         original_im = None
         if args.min_intensity is not None:
             if not pipe_status:
@@ -295,9 +303,11 @@ def main():
                 z_range = range(0, original_im.shape[0], args.zBinning)
                 original_im = _remove_z_planes(original_im, z_range)
             
+        # filters mask file
         print("$ Filtering masks...")
         filtered_image = filter_masks(mask, original_im, args.min_diameter, args.max_diameter, args.min_z, args.max_z, args.num_pixels, args.min_intensity)
 
+        # saved filtered mask file
         print(f"$ Saving filtered masks to: {save_path}")
         save_image(filtered_image.astype(np.uint8), save_path)
 
