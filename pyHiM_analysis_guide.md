@@ -394,6 +394,10 @@ $ ls *mask0*ch01*
 
 # if you are happy with this list, then run mask filter on this list
 $ ls *mask0*ch01* | mask_filter.py --pipe --pyHiM --min_intensity 2000 --min_z 5 --max_z 20  --replace_mask_file
+
+# or run this for several ROIs
+$ cd /home/marcnol/grey/ProcessedData_2024/Experiment_75_David_DNAFISH_HiM_HRKit_G1E_20240708
+$ ls */*mask*ch01.tif | mask_filter.py --pipe --pyHiM --min_intensity 2000 --min_z 5 --max_z 20  --replace_mask_file
 ```   
 
 
