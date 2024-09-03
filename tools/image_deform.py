@@ -7,9 +7,15 @@ Deforms image anisotropically
 
 @author: marcnol
 """
-import argparse
+import argparse, sys, os
 import SimpleITK as sitk
 import numpy as np
+
+def check_file_existence(filename):
+    """Check if the reference and moving image files exist."""
+    if not os.path.exists(filename):
+        print(f"Error: image file '{filename}' does not exist.")
+        sys.exit(1)
 
 def read_image(file_path):
     """Read an image from file."""
@@ -88,6 +94,7 @@ def main():
     print("This algorithm deforms a 3D image. Deformations can be anisotropic (see arguments).")
 
     # Read the input image
+    check_file_existence(args.input)
     input_image = read_image(args.input)
 
     # Create anisotropic displacement field

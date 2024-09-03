@@ -5,10 +5,10 @@ This script performs subvolume extraction from a TIFF or HDF5 file,
 with optional blanking out half of the image.
 
 Usage:
-    python script_name.py -F input_file -Z zoom_factor [-A] 
+    python image_extract_subVolume.py -F input_file -Z zoom_factor [-A] 
 
 Example:
-    python script_name.py -F input_image.tif -Z 10 -A 
+    python image_extract_subVolume.py -F input_image.tif -Z 10 -A 
 
 Installation:
     conda create -y -n image_processing python==3.11
@@ -30,6 +30,12 @@ import matplotlib.pylab as plt
 import numpy as np
 import h5py
 
+def check_file_existence(filename):
+    """Check if the reference and moving image files exist."""
+    if not os.path.exists(filename):
+        print(f"Error: image file '{filename}' does not exist.")
+        sys.exit(1)
+        
 def read_image(file_path):
     """Read an image from a file (TIFF or HDF5)."""
     if file_path.endswith('.h5'):
@@ -73,6 +79,7 @@ if __name__ == "__main__":
     file = p["file"]
     
     # loads image files
+    check_file_existence(file)
     print(f"$ Loading file: {file}")
     imageRaw = read_image(file)
     
