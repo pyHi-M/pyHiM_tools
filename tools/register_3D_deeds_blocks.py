@@ -412,7 +412,9 @@ def main():
 
     # Plot the normalized images
     png_path = os.path.join(os.path.dirname(args.png_folder), os.path.basename(args.output))
-    plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, png_path + "_normalized.png")
+    path_normalized_png = png_path.split('.')[0] + "_normalized.png"
+    print(f"$ Will save preprocessed images at: {args.png_folder}")
+    plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, path_normalized_png)
 
     # registers images
     print_memory_usage("Before processing blocks")
