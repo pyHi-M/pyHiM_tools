@@ -140,8 +140,8 @@ def split_image(image_np, factors):
             blocks.append(block)
     return blocks, block_size, factors
 
-def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, is_vector=False):
-    # Initialize the stitched image
+
+def stitch_blocks_with_overlap(blocks, blocks_shape, block_size, original_shape, overlap=10, is_vector=False):
     if is_vector:
         stitched_image = np.zeros((original_shape[0], original_shape[1], original_shape[2], blocks[0].shape[-1]), dtype=blocks[0].dtype)
         weight_map = np.zeros_like(stitched_image, dtype=np.float32)
@@ -152,10 +152,10 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
     block_index = 0
     for y in range(blocks_shape[0]):
         for x in range(blocks_shape[1]):
-            y_start = y * block_size[1]
-            x_start = x * block_size[2]
-            y_end = (y + 1) * block_size[1]
-            x_end = (x + 1) * block_size[2]
+            y_start = y * (block_size[1] - overlap)
+            x_start = x * (block_size[2] - overlap)
+            y_end = y_start + block_size[1]
+            x_end = x_start + block_size[2]
 
             # Handle the case where the dimensions are not evenly divisible
             if y == blocks_shape[0] - 1:
@@ -169,7 +169,7 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
             # Create a weight mask for blending (this makes the block edges "softer")
             weight_y = np.ones(block.shape[1])
             weight_x = np.ones(block.shape[2])
-            
+
             if y > 0:
                 # Blend top region
                 weight_y[:overlap] = np.linspace(0, 1, overlap)
@@ -192,6 +192,7 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
     stitched_image /= (weight_map + 1e-8)  # Add small epsilon to avoid division by zero
 
     return stitched_image
+
 
 
 def to_numpy(img):
