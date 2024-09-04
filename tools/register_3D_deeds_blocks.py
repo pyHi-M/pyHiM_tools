@@ -411,7 +411,7 @@ def main():
     fixed_image = to_sitk(fixed_image_np)
 
     # Plot the normalized images
-    png_path = os.path.join(os.path.dirname(args.png_folder), os.path.basename(args.output))
+    png_path = os.path.join(args.png_folder, os.path.basename(args.output))
     path_normalized_png = png_path.split('.')[0] + "_normalized.png"
     print(f"$ Will save preprocessed images at: {path_normalized_png}")
     plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, path_normalized_png)
