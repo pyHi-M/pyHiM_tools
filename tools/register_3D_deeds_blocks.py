@@ -140,11 +140,15 @@ def split_image(image_np, factors):
             blocks.append(block)
     return blocks, block_size, factors
 
-def stitch_blocks(blocks, blocks_shape, block_size, original_shape, is_vector=False):
+def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, is_vector=False):
+    # Initialize the stitched image
     if is_vector:
         stitched_image = np.zeros((original_shape[0], original_shape[1], original_shape[2], blocks[0].shape[-1]), dtype=blocks[0].dtype)
+        weight_map = np.zeros_like(stitched_image, dtype=np.float32)
     else:
         stitched_image = np.zeros((original_shape[0], original_shape[1], original_shape[2]), dtype=blocks[0].dtype)
+        weight_map = np.zeros_like(stitched_image, dtype=np.float32)
+
     block_index = 0
     for y in range(blocks_shape[0]):
         for x in range(blocks_shape[1]):
@@ -152,16 +156,43 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, is_vector=Fa
             x_start = x * block_size[2]
             y_end = (y + 1) * block_size[1]
             x_end = (x + 1) * block_size[2]
+
+            # Handle the case where the dimensions are not evenly divisible
             if y == blocks_shape[0] - 1:
                 y_end = original_shape[1]
             if x == blocks_shape[1] - 1:
                 x_end = original_shape[2]
+
+            # Select the current block
+            block = blocks[block_index]
+
+            # Create a weight mask for blending (this makes the block edges "softer")
+            weight_y = np.ones(block.shape[1])
+            weight_x = np.ones(block.shape[2])
+            
+            if y > 0:
+                # Blend top region
+                weight_y[:overlap] = np.linspace(0, 1, overlap)
+            if x > 0:
+                # Blend left region
+                weight_x[:overlap] = np.linspace(0, 1, overlap)
+
+            # Expand the weight maps to the full block size
+            weight_block = np.outer(weight_y, weight_x)
             if is_vector:
-                stitched_image[:, y_start:y_end, x_start:x_end, :] = blocks[block_index]
-            else:
-                stitched_image[:, y_start:y_end, x_start:x_end] = blocks[block_index]
+                weight_block = weight_block[..., np.newaxis]
+
+            # Accumulate pixel values and weights
+            stitched_image[:, y_start:y_end, x_start:x_end] += block * weight_block
+            weight_map[:, y_start:y_end, x_start:x_end] += weight_block
+
             block_index += 1
+
+    # Normalize by the accumulated weights to smooth the blending
+    stitched_image /= (weight_map + 1e-8)  # Add small epsilon to avoid division by zero
+
     return stitched_image
+
 
 def to_numpy(img):
     return sitk.GetArrayFromImage(img)
