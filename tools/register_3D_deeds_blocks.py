@@ -6,8 +6,8 @@
 installations
 
 conda create -y -n deeds python==3.11
-pip install git+https://github.com/AlexCoul/deeds-registration@flow_field
-pip install SimpleITK numpy psutil h5py scipy scikit-image photutils astropy
+pip install git+https://github.com/marcnol/deeds-registration@flow_field
+pip install SimpleITK numpy psutil h5py scipy scikit-image photutils astropy matplotlib tqdm
 
 This script performs block-wise deformable registration of two 3D images using the DEEDS method. 
 
@@ -44,7 +44,7 @@ import SimpleITK as sitk
 import numpy as np
 import psutil
 import h5py
-import os
+import os, sys
 import matplotlib.pyplot as plt
 from scipy.ndimage import shift as shift_image
 from deeds import registration_imwarp_fields
