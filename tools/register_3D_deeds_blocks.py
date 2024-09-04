@@ -120,6 +120,7 @@ def print_memory_usage(step):
     memory_info = process.memory_info()
     print(f"{step} - Memory usage: {memory_info.rss / (1024 * 1024):.2f} MB")
 
+
 def split_image(image_np, factors):
     z_size = image_np.shape[0]
     y_size = image_np.shape[1]
