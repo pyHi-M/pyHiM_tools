@@ -166,9 +166,12 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
             # Select the current block
             block = blocks[block_index]
 
-            # Create a weight mask for blending (this makes the block edges "softer")
-            weight_y = np.ones(block.shape[1])
-            weight_x = np.ones(block.shape[2])
+            # Dynamically adjust weight maps if the block is smaller than expected at the edges
+            current_block_size_y = y_end - y_start
+            current_block_size_x = x_end - x_start
+
+            weight_y = np.ones(current_block_size_y)
+            weight_x = np.ones(current_block_size_x)
 
             if y > 0:
                 # Blend top region
@@ -177,10 +180,15 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
                 # Blend left region
                 weight_x[:overlap] = np.linspace(0, 1, overlap)
 
-            # Expand the weight maps to the full block size
+            # Create the weight block
             weight_block = np.outer(weight_y, weight_x)
             if is_vector:
                 weight_block = weight_block[..., np.newaxis]
+
+            # Ensure the block and weight block have the same dimensions
+            if block.shape != stitched_image[:, y_start:y_end, x_start:x_end].shape:
+                print(f"Block shape: {block.shape}, target shape: {stitched_image[:, y_start:y_end, x_start:x_end].shape}")
+                raise ValueError("Block and stitched image shape mismatch")
 
             # Accumulate pixel values and weights
             stitched_image[:, y_start:y_end, x_start:x_end] += block * weight_block
@@ -192,6 +200,7 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
     stitched_image /= (weight_map + 1e-8)  # Add small epsilon to avoid division by zero
 
     return stitched_image
+
 
 
 
