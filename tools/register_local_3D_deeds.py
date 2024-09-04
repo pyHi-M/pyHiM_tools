@@ -62,7 +62,11 @@ def process_files(files, reference_file, shifts_dict, args):
         shifts = shifts_dict.get(roi, {}).get(cycle, None)
         
         # checks folders
-        output_folder = args.folder.rstrip('/')+os.sep+'register_local'
+        if args.folder == './':
+            output_folder = 'register_local'    
+        else:
+            output_folder = args.folder.rstrip('/')+os.sep+'register_local'
+            
         data_folder = output_folder+os.sep+'data'
         check_and_create_folder(output_folder)
         check_and_create_folder(data_folder)

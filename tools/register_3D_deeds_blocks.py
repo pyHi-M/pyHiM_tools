@@ -393,7 +393,8 @@ def main():
 
     print("This algorithm aligns two 3D volumes using the DEEDS method (deformable) based on optical flow.")
     print("This implementation breaks the images in user-defined blocks.")    
-
+    print(f"$ Will save pngs at: {args.png_folder}")
+    
     # loads images into memory
     check_file_existence(args.reference, args.moving)
 
