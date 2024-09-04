@@ -156,14 +156,16 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
             y_end = y_start + block_size[1]
             x_end = x_start + block_size[2]
 
-            # Handle the case where the dimensions are not evenly divisible
-            if y == blocks_shape[0] - 1:
+            # Handle the case where the dimensions are not evenly divisible (edge blocks)
+            if y_end > original_shape[1]:
                 y_end = original_shape[1]
-            if x == blocks_shape[1] - 1:
-                x_end = original_shape[2]
+                block = blocks[block_index][:, :y_end-y_start, :]
+            else:
+                block = blocks[block_index]
 
-            # Select the current block
-            block = blocks[block_index]
+            if x_end > original_shape[2]:
+                x_end = original_shape[2]
+                block = block[:, :, :x_end-x_start]
 
             # Debug: print the shapes for the block and the target region in stitched_image
             print(f"Block index: {block_index}")
@@ -204,7 +206,6 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
     stitched_image /= (weight_map + 1e-8)  # Add small epsilon to avoid division by zero
 
     return stitched_image
-
 
 
 def to_numpy(img):
