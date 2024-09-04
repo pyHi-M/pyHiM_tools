@@ -299,26 +299,43 @@ def plot_deformation_direction(displacement_field, z_plane, output_prefix):
     plt.show()
 
 class BothImgRbgFile:
-    def __init__(self, image1, image2):
+    def __init__(self, image1, image2, tag='', title=''):
         self.image1 = image1
         self.image2 = image2
+        self.tag = tag
+        if title is None:
+            self.title = tag  # gets title from tag
+        else:
+            self.title = title  # New attribute to hold the title
 
     def save(self, folder_path, basename):
         self.folder_path = folder_path
-        self.basename = f"{basename}_overlay"
+        self.basename = f"{basename}_{self.tag}_overlay"
         self.path_name = os.path.join(self.folder_path, self.basename + ".png")
+        
+        # Normalize images and rescale intensity
         img_1 = self.image1 / self.image1.max()
         img_2 = self.image2 / self.image2.max()
         img_1 = exposure.rescale_intensity(img_1, out_range=(0, 1))
         img_2 = exposure.rescale_intensity(img_2, out_range=(0, 1))
+        
+        # Create the figure and axis
         fig, ax1 = plt.subplots()
         fig.set_size_inches((30, 30))
+        
+        # Create RGB overlay image
         null_image = np.zeros(img_1.shape)
         rgb = np.dstack([img_1, img_2, null_image])
+        
+        # Display the image and set the title
         ax1.imshow(rgb)
         ax1.axis("off")
+        ax1.set_title(self.title)  # Set the title of the figure
+        
+        # Save the figure
         fig.savefig(self.path_name)
         plt.close(fig)
+
 
 def plot_4_images(allimages, titles=None):
     if titles is None:
@@ -360,6 +377,7 @@ def main():
     parser.add_argument('--reference', required=True, help='Path to the reference (fixed) image file.')
     parser.add_argument('--moving', required=True, help='Path to the moving image file.')
     parser.add_argument('--output', required=True, help='Path to the output (aligned) image file.')
+    parser.add_argument('--png_folder', default='', help='Path to the folder that will hold png output files.')
     parser.add_argument('--displacement_field', required=True, help='Path to save the displacement field image file.')
     parser.add_argument('--displacement_format', choices=['tif', 'nii', 'h5'], default='h5', help='Format to save the displacement field. Default is h5.')
     parser.add_argument('--factors', type=int, nargs=2, default=[2, 2], help='Factors to split the image (y, x). Default: 2 2 (two blocks by two blocks)')
@@ -392,8 +410,8 @@ def main():
     fixed_image = to_sitk(fixed_image_np)
 
     # Plot the normalized images
-    path_name_normalized = os.path.join(os.path.dirname(args.output), os.path.basename(args.output) + "_normalized.png")
-    plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, path_name_normalized)
+    png_path = os.path.join(os.path.dirname(args.png_folder), os.path.basename(args.output))
+    plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, png_path + "_normalized.png")
 
     # registers images
     print_memory_usage("Before processing blocks")
@@ -411,13 +429,16 @@ def main():
     print(f"Displacement field written to {args.displacement_field}")
 
     # Plot the overlay of the reference and registered images
-    overlay = BothImgRbgFile(fixed_image_np.max(axis=0), registered_image_np.max(axis=0))
-    overlay.save(os.path.dirname(args.output), os.path.basename(args.output))
+    overlay = BothImgRbgFile(fixed_image_np.max(axis=0), moving_image_np.max(axis=0), tag='reference_original')
+    overlay.save(os.path.dirname(args.png_folder), os.path.basename(args.output))
+
+    overlay = BothImgRbgFile(fixed_image_np.max(axis=0), registered_image_np.max(axis=0), tag='reference_aligned')
+    overlay.save(os.path.dirname(args.png_folder), os.path.basename(args.output))
 
     # Plot the intensity and direction of the deformation field at the center z-plane
     z_plane = registered_image_np.shape[0] // 2
-    plot_deformation_intensity(displacement_fields_np, z_plane, args.output)
-    plot_deformation_direction(displacement_fields_np, z_plane, args.output)
+    plot_deformation_intensity(displacement_fields_np, z_plane, png_path)
+    plot_deformation_direction(displacement_fields_np, z_plane, png_path)
 
     print('done')
 
