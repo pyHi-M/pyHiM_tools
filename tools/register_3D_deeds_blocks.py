@@ -412,9 +412,7 @@ def main():
 
     # Plot the normalized images
     png_path = os.path.join(args.png_folder, os.path.basename(args.output))
-    path_normalized_png = png_path.split('.')[0] + "_normalized.png"
-    print(f"$ Will save preprocessed images at: {path_normalized_png}")
-    plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, path_normalized_png)
+    plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, png_path.split('.')[0] + "_normalized.png")
 
     # registers images
     print_memory_usage("Before processing blocks")
@@ -433,10 +431,10 @@ def main():
 
     # Plot the overlay of the reference and registered images
     overlay = BothImgRbgFile(fixed_image_np.max(axis=0), moving_image_np.max(axis=0), tag='reference_original')
-    overlay.save(os.path.dirname(args.png_folder), os.path.basename(args.output))
+    overlay.save(args.png_folder, os.path.basename(args.output))
 
     overlay = BothImgRbgFile(fixed_image_np.max(axis=0), registered_image_np.max(axis=0), tag='reference_aligned')
-    overlay.save(os.path.dirname(args.png_folder), os.path.basename(args.output))
+    overlay.save(args.png_folder, os.path.basename(args.output))
 
     # Plot the intensity and direction of the deformation field at the center z-plane
     z_plane = registered_image_np.shape[0] // 2
