@@ -140,7 +140,6 @@ def split_image(image_np, factors):
             blocks.append(block)
     return blocks, block_size, factors
 
-
 def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, is_vector=False):
     if is_vector:
         stitched_image = np.zeros((original_shape[0], original_shape[1], original_shape[2], blocks[0].shape[-1]), dtype=blocks[0].dtype)
@@ -166,6 +165,11 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
             # Select the current block
             block = blocks[block_index]
 
+            # Debug: print the shapes for the block and the target region in stitched_image
+            print(f"Block index: {block_index}")
+            print(f"Block shape: {block.shape}")
+            print(f"Target shape in stitched image: {stitched_image[:, y_start:y_end, x_start:x_end].shape}")
+
             # Dynamically adjust weight maps if the block is smaller than expected at the edges
             current_block_size_y = y_end - y_start
             current_block_size_x = x_end - x_start
@@ -187,7 +191,7 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
 
             # Ensure the block and weight block have the same dimensions
             if block.shape != stitched_image[:, y_start:y_end, x_start:x_end].shape:
-                print(f"Block shape: {block.shape}, target shape: {stitched_image[:, y_start:y_end, x_start:x_end].shape}")
+                print(f"Error at block {block_index}: Block shape {block.shape}, Target shape {stitched_image[:, y_start:y_end, x_start:x_end].shape}")
                 raise ValueError("Block and stitched image shape mismatch")
 
             # Accumulate pixel values and weights
@@ -200,7 +204,6 @@ def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, 
     stitched_image /= (weight_map + 1e-8)  # Add small epsilon to avoid division by zero
 
     return stitched_image
-
 
 
 
