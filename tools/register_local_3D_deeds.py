@@ -36,7 +36,14 @@ def read_shifts(file_path):
         print(f"! Error decoding JSON file: {file_path}")
         return None
 
-def process_files(files, reference_file, shifts_dict):
+def check_and_create_folder(folder_path):
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        print(f"Folder '{folder_path}' created.")
+    else:
+        print(f"Folder '{folder_path}' already exists.")
+
+def process_files(files, reference_file, shifts_dict, args):
     for file in files:
         # Extract the base filename without the directory path
         base_filename = os.path.basename(file)
@@ -54,14 +61,20 @@ def process_files(files, reference_file, shifts_dict):
         # Get the shift values from the dictionary
         shifts = shifts_dict.get(roi, {}).get(cycle, None)
         
+        # checks folders
+        output_folder = args.folder.rstrip('/')+os.sep+'register_local'
+        data_folder = output_folder+os.sep+'data'
+        check_and_create_folder(output_folder)
+        check_and_create_folder(data_folder)
+
         # Construct the displacement field filename
-        displacement_field = f"{base_filename[:-4]}_DF.h5"
+        displacement_field = data_folder+os.sep+f"{base_filename[:-4]}_DF.h5"
         
         # Construct the output filename
-        output_file = f"{base_filename[:-4]}_aligned.tif"
+        output_file = data_folder+os.sep+f"{base_filename[:-4]}_aligned.tif"
         
         # Construct the log filename
-        log_file = f"{base_filename[:-4]}_DF.log"
+        log_file = data_folder+os.sep+f"{base_filename[:-4]}_DF.log"
         
         # Run the register_3D_deeds_blocks.py command with the constructed arguments and log the output
         with open(log_file, "w") as log:
@@ -70,6 +83,7 @@ def process_files(files, reference_file, shifts_dict):
                 "--reference", reference_file,
                 "--moving", file,
                 "--displacement_field", displacement_field,
+                "--png_folder", output_folder,
                 "--output", output_file
             ]
             
@@ -156,7 +170,7 @@ def main():
                 print(f"$ Decoded filename: channel {channel}: cycle:{cycle}")
 
     # Process the found files
-    process_files(files_to_process, reference_file, shifts_dict)
+    process_files(files_to_process, reference_file, shifts_dict, args)
 
 if __name__ == "__main__":
     main()
