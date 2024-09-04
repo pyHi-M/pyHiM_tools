@@ -141,7 +141,7 @@ def split_image(image_np, factors):
     return blocks, block_size, factors
 
 
-def stitch_blocks_with_overlap(blocks, blocks_shape, block_size, original_shape, overlap=10, is_vector=False):
+def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, is_vector=False):
     if is_vector:
         stitched_image = np.zeros((original_shape[0], original_shape[1], original_shape[2], blocks[0].shape[-1]), dtype=blocks[0].dtype)
         weight_map = np.zeros_like(stitched_image, dtype=np.float32)
