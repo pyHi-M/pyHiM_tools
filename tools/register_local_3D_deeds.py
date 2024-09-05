@@ -20,7 +20,6 @@ Arguments:
 import os
 import json
 import re
-import glob
 import subprocess
 import argparse
 import concurrent.futures
@@ -105,8 +104,6 @@ def process_files(files, reference_file, shifts_dict, args):
                 stdout=log,
                 stderr=subprocess.STDOUT
             )
-
-
 
 def process_single_file(file, reference_file, shifts_dict, args):
     # Extract the base filename without the directory path
