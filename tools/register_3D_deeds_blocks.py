@@ -294,7 +294,7 @@ def plot_deformation_intensity_xyz(displacement_field, z_plane, output_prefix):
         cbar1.set_label('pixels')
 
     fig.tight_layout()
-    fig.title(f'Intensity of Vector Field at Z-plane {z_plane}')
+    fig.suptitle(f'Intensity of Vector Field at Z-plane {z_plane}')
 
     fig.savefig(f"{output_prefix}_intensity_z{z_plane}.png")
 
