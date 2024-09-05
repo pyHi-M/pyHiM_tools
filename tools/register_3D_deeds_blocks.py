@@ -342,7 +342,7 @@ def compute_direction(displacement_field, z_plane):
 def plot_deformation_direction(displacement_field, z_plane, output_prefix):
     direction = compute_direction(displacement_field, z_plane)
     plt.figure(figsize=(10, 8))
-    plt.imshow(direction, cmap='RdBu', alpha=0.9, norm=plt.Normalize(-np.pi, np.pi))
+    plt.imshow(direction, cmap='twilight', alpha=0.9, norm=plt.Normalize(-np.pi, np.pi))
     cbar = plt.colorbar(ticks=[-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
     cbar.ax.set_yticklabels(['-π', '-π/2', '0', 'π/2', 'π'])
     cbar.set_label('Vector Field Direction (radians)')
