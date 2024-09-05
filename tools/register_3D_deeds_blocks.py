@@ -54,6 +54,7 @@ from photutils.background import Background2D
 from astropy.stats import SigmaClip
 from tqdm import trange
 import matplotlib.colors as mcolors
+from scipy.ndimage import gaussian_filter
 
 def reinterpolate_z(image_3d, z_range, mode='remove'):
     output = np.zeros((len(z_range), image_3d.shape[1], image_3d.shape[2]), dtype=image_3d.dtype)
@@ -257,6 +258,29 @@ def process_blocks(fixed_image_np, moving_image_np, args):
     
     return registered_image_np, displacement_fields_np
 
+def smooth_vector_field(vector_field, sigma=1.0):
+    """
+    Smooth a 3D vector field using a Gaussian filter.
+
+    Parameters:
+    vector_field : numpy.ndarray
+        The 3D vector field to be smoothed. Shape should be (z, y, x, 3) for 3D vectors.
+    sigma : float
+        The standard deviation for the Gaussian kernel. Higher values mean more smoothing.
+
+    Returns:
+    smoothed_field : numpy.ndarray
+        The smoothed vector field.
+    """
+    smoothed_field = np.zeros_like(vector_field)
+    
+    # Apply Gaussian smoothing to each component of the vector field
+    for i in range(vector_field.shape[-1]):
+        smoothed_field[..., i] = gaussian_filter(vector_field[..., i], sigma=sigma)
+    
+    return smoothed_field
+
+
 # Additional functions for plotting
 def compute_intensity(displacement_field, z_plane):
     dz = displacement_field[z_plane, :, :, 0]
@@ -448,6 +472,9 @@ def main():
     print_memory_usage("Before processing blocks")
     registered_image_np, displacement_fields_np = process_blocks(fixed_image_np, moving_image_np, args)
 
+    # smooths vector field
+    smoothed_displacement_fields_np = smooth_vector_field(displacement_fields_np, sigma=2.0)
+
     registered_image_sitk = to_sitk(registered_image_np, ref_img=fixed_image)
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
     displacement_field_sitk.CopyInformation(fixed_image)
@@ -470,6 +497,8 @@ def main():
     z_plane = registered_image_np.shape[0] // 2
     plot_deformation_intensity_xyz(displacement_fields_np, z_plane, png_path)
     plot_deformation_direction(displacement_fields_np, z_plane, png_path)
+
+    plot_deformation_intensity_xyz(smoothed_displacement_fields_np, z_plane, png_path)
 
     print('done')
 
