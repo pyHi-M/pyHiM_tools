@@ -287,12 +287,12 @@ def plot_deformation_intensity_xyz(displacement_field, z_plane, output_prefix):
 
     for axis, img, title in zip(ax, data, titles):
         if "dx^2+dx^2+dz^2" in title:
-            min_max = np.abs(np.max(img)), np.abs(np.min(img))
-            min_max=np.max(min_max)
+            min_max = np.max( [np.abs(np.max(img)), np.abs(np.min(img))] )
+            vmin, vmax = -min_max, min_max
         else:
-            min_max = np.max(img)
+            vmin, vmax = 0, np.max(img)
             
-        im = axis.imshow(img, cmap="Reds", vmin=-min_max, vmax=min_max)
+        im = axis.imshow(img, cmap="YlOrRd", vmin=vmin, vmax=vmax)
         axis.set_title(title)    
         axis.set_xlabel('X-axis')
         axis.set_ylabel('Y-axis')
