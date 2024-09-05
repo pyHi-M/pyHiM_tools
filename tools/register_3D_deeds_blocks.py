@@ -286,11 +286,13 @@ def plot_deformation_intensity_xyz(displacement_field, z_plane, output_prefix):
     ax = axes.ravel()
 
     for axis, img, title in zip(ax, data, titles):
-        im = axis.imshow(img, cmap="Reds")
+        min_max = np.abs(np.max(img)), np.abs(np.min(img))
+        min_max=np.max(min_max)
+        im = axis.imshow(img, cmap="Reds", vmin=-min_max, vmax=min_max)
         axis.set_title(title)    
         axis.set_xlabel('X-axis')
         axis.set_ylabel('Y-axis')
-        cbar1 = fig.colorbar(im, ax=axis)
+        cbar1 = fig.colorbar(im, ax=axis, shrink=0.5)
         cbar1.set_label('pixels')
 
     fig.tight_layout()
