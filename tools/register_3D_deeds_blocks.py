@@ -120,7 +120,6 @@ def print_memory_usage(step):
     memory_info = process.memory_info()
     print(f"{step} - Memory usage: {memory_info.rss / (1024 * 1024):.2f} MB")
 
-
 def split_image(image_np, factors):
     z_size = image_np.shape[0]
     y_size = image_np.shape[1]
@@ -141,73 +140,28 @@ def split_image(image_np, factors):
             blocks.append(block)
     return blocks, block_size, factors
 
-def stitch_blocks(blocks, blocks_shape, block_size, original_shape, overlap=10, is_vector=False):
+def stitch_blocks(blocks, blocks_shape, block_size, original_shape, is_vector=False):
     if is_vector:
         stitched_image = np.zeros((original_shape[0], original_shape[1], original_shape[2], blocks[0].shape[-1]), dtype=blocks[0].dtype)
-        weight_map = np.zeros_like(stitched_image, dtype=np.float32)
     else:
         stitched_image = np.zeros((original_shape[0], original_shape[1], original_shape[2]), dtype=blocks[0].dtype)
-        weight_map = np.zeros_like(stitched_image, dtype=np.float32)
-
     block_index = 0
     for y in range(blocks_shape[0]):
         for x in range(blocks_shape[1]):
-            y_start = y * (block_size[1] - overlap)
-            x_start = x * (block_size[2] - overlap)
-            y_end = y_start + block_size[1]
-            x_end = x_start + block_size[2]
-
-            # Handle the case where the dimensions are not evenly divisible (edge blocks)
-            if y_end > original_shape[1]:
+            y_start = y * block_size[1]
+            x_start = x * block_size[2]
+            y_end = (y + 1) * block_size[1]
+            x_end = (x + 1) * block_size[2]
+            if y == blocks_shape[0] - 1:
                 y_end = original_shape[1]
-                block = blocks[block_index][:, :y_end-y_start, :]
-            else:
-                block = blocks[block_index]
-
-            if x_end > original_shape[2]:
+            if x == blocks_shape[1] - 1:
                 x_end = original_shape[2]
-                block = block[:, :, :x_end-x_start]
-
-            # Debug: print the shapes for the block and the target region in stitched_image
-            print(f"Block index: {block_index}")
-            print(f"Block shape: {block.shape}")
-            print(f"Target shape in stitched image: {stitched_image[:, y_start:y_end, x_start:x_end].shape}")
-
-            # Dynamically adjust weight maps if the block is smaller than expected at the edges
-            current_block_size_y = y_end - y_start
-            current_block_size_x = x_end - x_start
-
-            weight_y = np.ones(current_block_size_y)
-            weight_x = np.ones(current_block_size_x)
-
-            if y > 0:
-                # Blend top region
-                weight_y[:overlap] = np.linspace(0, 1, overlap)
-            if x > 0:
-                # Blend left region
-                weight_x[:overlap] = np.linspace(0, 1, overlap)
-
-            # Create the weight block
-            weight_block = np.outer(weight_y, weight_x)
             if is_vector:
-                weight_block = weight_block[..., np.newaxis]
-
-            # Ensure the block and weight block have the same dimensions
-            if block.shape != stitched_image[:, y_start:y_end, x_start:x_end].shape:
-                print(f"Error at block {block_index}: Block shape {block.shape}, Target shape {stitched_image[:, y_start:y_end, x_start:x_end].shape}")
-                raise ValueError("Block and stitched image shape mismatch")
-
-            # Accumulate pixel values and weights
-            stitched_image[:, y_start:y_end, x_start:x_end] += block * weight_block
-            weight_map[:, y_start:y_end, x_start:x_end] += weight_block
-
+                stitched_image[:, y_start:y_end, x_start:x_end, :] = blocks[block_index]
+            else:
+                stitched_image[:, y_start:y_end, x_start:x_end] = blocks[block_index]
             block_index += 1
-
-    # Normalize by the accumulated weights to smooth the blending
-    stitched_image /= (weight_map + 1e-8)  # Add small epsilon to avoid division by zero
-
     return stitched_image
-
 
 def to_numpy(img):
     return sitk.GetArrayFromImage(img)
