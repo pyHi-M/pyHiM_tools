@@ -17,7 +17,7 @@ Arguments:
     -r, --reference_file            Reference file for the registration (required).
 """
 
-import os
+import os, sys
 import json
 import re
 import subprocess
@@ -59,8 +59,11 @@ def process_files(files, reference_file, shifts_dict, args):
         cycle = match.group('cycle')
 
         # Get the shift values from the dictionary
-        shifts = shifts_dict.get(roi, {}).get(cycle, None)
-        
+        try:
+            shifts = shifts_dict.get(roi, {}).get(cycle, None)
+        except AttributeError:
+            sys.exit(f'Error, could not find shift for {roi}:{cycle} ')
+            
         # checks folders
         if args.folder == './':
             output_folder = 'register_local'    
