@@ -473,7 +473,7 @@ def main():
     registered_image_np, displacement_fields_np = process_blocks(fixed_image_np, moving_image_np, args)
 
     # smooths vector field
-    smoothed_displacement_fields_np = smooth_vector_field(displacement_fields_np, sigma=2.0)
+    smoothed_displacement_fields_np = smooth_vector_field(displacement_fields_np, sigma=5.0)
 
     registered_image_sitk = to_sitk(registered_image_np, ref_img=fixed_image)
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
@@ -498,7 +498,7 @@ def main():
     plot_deformation_intensity_xyz(displacement_fields_np, z_plane, png_path)
     plot_deformation_direction(displacement_fields_np, z_plane, png_path)
 
-    plot_deformation_intensity_xyz(smoothed_displacement_fields_np, z_plane, png_path)
+    plot_deformation_intensity_xyz(smoothed_displacement_fields_np, z_plane, png_path.split('.')[0] + "_smoothed.png")
 
     print('done')
 
