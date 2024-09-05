@@ -263,7 +263,46 @@ def compute_intensity(displacement_field, z_plane):
     dy = displacement_field[z_plane, :, :, 1]
     dx = displacement_field[z_plane, :, :, 2]
     intensity = np.sqrt(dx**2 + dy**2 + dz**2)
-    return intensity
+    return intensity,dx,dy,dz
+
+def plot_deformation_intensity(displacement_field, z_plane, output_prefix):
+    intensity,_,_,_ = compute_intensity(displacement_field, z_plane)
+    plt.figure(figsize=(10, 8))
+    plt.imshow(intensity, cmap='Reds')
+    plt.colorbar(label='Vector Field Intensity')
+    plt.title(f'Intensity of Vector Field at Z-plane {z_plane}')
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    plt.savefig(f"{output_prefix}_intensity_z{z_plane}.png")
+    plt.show()
+
+def plot_deformation_intensity_xyz(displacement_field, z_plane, output_prefix):
+
+    titles = [
+        "dx^2+dx^2+dz^2",
+        "dx",
+        "dy",
+        "dz",
+    ]
+
+    fig, axes = plt.subplots(2, 2)
+    fig.set_size_inches((10, 10))
+    ax = axes.ravel()
+
+    data = compute_intensity(displacement_field, z_plane)
+
+    for axis, img, title in zip(ax, data, titles):
+        im = axis.imshow(img, cmap="Reds")
+        axis.set_title(title)    
+        plt.set_xlabel('X-axis')
+        plt.set_ylabel('Y-axis')
+        cbar1 = fig.colorbar(im, ax=axis)
+        cbar1.set_label('pixels')
+
+    fig.savefig(f"{output_prefix}_intensity_z{z_plane}.png")
+    fig.tight_layout()
+    fig.title(f'Intensity of Vector Field at Z-plane {z_plane}')
+
 
 def compute_direction(displacement_field, z_plane):
     dz = displacement_field[z_plane, :, :, 0]
@@ -273,17 +312,6 @@ def compute_direction(displacement_field, z_plane):
     norm = plt.Normalize(-np.pi, np.pi)
     direction_normalized = norm(direction)
     return direction_normalized
-
-def plot_deformation_intensity(displacement_field, z_plane, output_prefix):
-    intensity = compute_intensity(displacement_field, z_plane)
-    plt.figure(figsize=(10, 8))
-    plt.imshow(intensity, cmap='Reds')
-    plt.colorbar(label='Vector Field Intensity')
-    plt.title(f'Intensity of Vector Field at Z-plane {z_plane}')
-    plt.xlabel('X-axis')
-    plt.ylabel('Y-axis')
-    plt.savefig(f"{output_prefix}_intensity_z{z_plane}.png")
-    plt.show()
 
 def plot_deformation_direction(displacement_field, z_plane, output_prefix):
     direction = compute_direction(displacement_field, z_plane)
@@ -438,7 +466,7 @@ def main():
 
     # Plot the intensity and direction of the deformation field at the center z-plane
     z_plane = registered_image_np.shape[0] // 2
-    plot_deformation_intensity(displacement_fields_np, z_plane, png_path)
+    plot_deformation_intensity_xyz(displacement_fields_np, z_plane, png_path)
     plot_deformation_direction(displacement_fields_np, z_plane, png_path)
 
     print('done')
