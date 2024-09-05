@@ -286,7 +286,7 @@ def plot_deformation_intensity_xyz(displacement_field, z_plane, output_prefix):
     ax = axes.ravel()
 
     for axis, img, title in zip(ax, data, titles):
-        if "dx^2+dx^2+dz^2" in title:
+        if "dx^2+dx^2+dz^2" not in title:
             min_max = np.max( [np.abs(np.max(img)), np.abs(np.min(img))] )
             vmin, vmax = -min_max, min_max
         else:
