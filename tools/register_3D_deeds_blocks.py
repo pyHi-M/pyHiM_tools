@@ -278,31 +278,25 @@ def plot_deformation_intensity(displacement_field, z_plane, output_prefix):
 
 def plot_deformation_intensity_xyz(displacement_field, z_plane, output_prefix):
 
-    titles = [
-        "dx^2+dx^2+dz^2",
-        "dx",
-        "dy",
-        "dz",
-    ]
+    data = compute_intensity(displacement_field, z_plane)
+    titles = ["dx^2+dx^2+dz^2", "dx", "dy", "dz"]
 
     fig, axes = plt.subplots(2, 2)
     fig.set_size_inches((10, 10))
     ax = axes.ravel()
 
-    data = compute_intensity(displacement_field, z_plane)
-
     for axis, img, title in zip(ax, data, titles):
         im = axis.imshow(img, cmap="Reds")
         axis.set_title(title)    
-        plt.set_xlabel('X-axis')
-        plt.set_ylabel('Y-axis')
+        axis.set_xlabel('X-axis')
+        axis.set_ylabel('Y-axis')
         cbar1 = fig.colorbar(im, ax=axis)
         cbar1.set_label('pixels')
 
-    fig.savefig(f"{output_prefix}_intensity_z{z_plane}.png")
     fig.tight_layout()
     fig.title(f'Intensity of Vector Field at Z-plane {z_plane}')
 
+    fig.savefig(f"{output_prefix}_intensity_z{z_plane}.png")
 
 def compute_direction(displacement_field, z_plane):
     dz = displacement_field[z_plane, :, :, 0]
