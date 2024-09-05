@@ -23,6 +23,7 @@ import re
 import glob
 import subprocess
 import argparse
+import concurrent.futures
 
 def read_shifts(file_path):
     """Read the shift dictionary from a JSON file."""
@@ -105,6 +106,80 @@ def process_files(files, reference_file, shifts_dict, args):
                 stderr=subprocess.STDOUT
             )
 
+
+
+def process_single_file(file, reference_file, shifts_dict, args):
+    # Extract the base filename without the directory path
+    base_filename = os.path.basename(file)
+    
+    # Extract ROI and cycle from the filename
+    regex_pattern = r'scan_(?P<runNumber>[0-9]+)_(?P<cycle>[a-zA-Z0-9]+)_(?P<roi>[0-9]+)_ROI_converted_decon_(?P<channel>ch00)\.(tif|nii|nii.gz|h5|hdf5)'
+    match = re.match(regex_pattern, base_filename)
+    if not match:
+        print(f"! Filename does not match pattern: {base_filename}")
+        return
+
+    roi = f"ROI:{match.group('roi')}"
+    cycle = match.group('cycle')
+
+    # Get the shift values from the dictionary
+    shifts = shifts_dict.get(roi, {}).get(cycle, None)
+    
+    # checks folders
+    if args.folder == './':
+        output_folder = 'register_local'    
+    else:
+        output_folder = args.folder.rstrip('/')+os.sep+'register_local'
+        
+    data_folder = output_folder+os.sep+'data'
+    check_and_create_folder(output_folder)
+    check_and_create_folder(data_folder)
+
+    # Construct the displacement field filename
+    displacement_field = data_folder+os.sep+f"{base_filename[:-4]}_DF.h5"
+    
+    # Construct the output filename
+    output_file = data_folder+os.sep+f"{base_filename[:-4]}_aligned.tif"
+    
+    # Construct the log filename
+    log_file = data_folder+os.sep+f"{base_filename[:-4]}_DF.log"
+    
+    # Run the register_3D_deeds_blocks.py command with the constructed arguments and log the output
+    with open(log_file, "w") as log:
+        cmd = [
+            "register_3D_deeds_blocks.py",
+            "--reference", reference_file,
+            "--moving", file,
+            "--displacement_field", displacement_field,
+            "--png_folder", output_folder,
+            "--output", output_file
+        ]
+        
+        if shifts:
+            cmd += ["--shifts", str(shifts[0]), str(shifts[1]), "0"]
+            print(f"$ Applying shifts for {base_filename}: {shifts}")
+        else:
+            print(f"! No shifts found for {base_filename}")
+
+        print("="*80)
+        print(f"$ will run: \n{' '.join(cmd)}")
+        
+        subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT)
+
+def process_files_parallel(files, reference_file, shifts_dict, args):
+    # Use ThreadPoolExecutor to run multiple processes in parallel
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit tasks to the executor for each file
+        futures = [executor.submit(process_single_file, file, reference_file, shifts_dict, args) for file in files]
+        
+        # Wait for all futures to complete and handle exceptions if needed
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()  # Get the result to check for any exceptions
+            except Exception as e:
+                print(f"Error processing file: {e}")
+
+
 def find_files(pattern, folder):
     files = [f for f in os.listdir(folder) if re.match(pattern, f)]
     
@@ -124,6 +199,7 @@ def main():
     parser.add_argument('--reference_file', required=True, help='Reference file for the registration.')
     parser.add_argument('--channel', default='ch00', help='Channel to process. Default: ch00')
     parser.add_argument('--shifts_file', default='register_global/data/shifts.json', help='Path to the JSON file containing pre-computed shifts.')
+    parser.add_argument("--parallel", help="Runs processes in parallel", action='store_true')
 
     args = parser.parse_args()
 
@@ -174,7 +250,10 @@ def main():
                 print(f"$ Decoded filename: channel {channel}: cycle:{cycle}")
 
     # Process the found files
+    if args.parallel:
+        process_files_parallel(files_to_process, reference_file, shifts_dict, args)
+    else:
     process_files(files_to_process, reference_file, shifts_dict, args)
-
+    
 if __name__ == "__main__":
     main()
