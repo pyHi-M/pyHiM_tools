@@ -253,7 +253,7 @@ def main():
     if args.parallel:
         process_files_parallel(files_to_process, reference_file, shifts_dict, args)
     else:
-    process_files(files_to_process, reference_file, shifts_dict, args)
+       process_files(files_to_process, reference_file, shifts_dict, args)
     
 if __name__ == "__main__":
     main()
