@@ -328,7 +328,7 @@ def plot_deformation_intensity_xyz(displacement_field, z_plane, output_prefix):
     fig.tight_layout()
     fig.suptitle(f'Intensity of Vector Field at Z-plane {z_plane}')
 
-    fig.savefig(f"{output_prefix}_intensity_z{z_plane}.png")
+    fig.savefig(f"{output_prefix}_DF_intensity_z{z_plane}.png")
 
 def compute_direction(displacement_field, z_plane):
     dz = displacement_field[z_plane, :, :, 0]
@@ -349,7 +349,7 @@ def plot_deformation_direction(displacement_field, z_plane, output_prefix):
     plt.title(f'Direction of Vector Field at Z-plane {z_plane}')
     plt.xlabel('X-axis')
     plt.ylabel('Y-axis')
-    plt.savefig(f"{output_prefix}_direction_z{z_plane}.png")
+    plt.savefig(f"{output_prefix}_DF_direction_z{z_plane}.png")
     plt.show()
 
 class BothImgRbgFile:
@@ -442,6 +442,7 @@ def main():
     parser.add_argument('--lower_threshold', type=float, default=0.9, help='Lower threshold for intensity adjustment in preprocessing.')
     parser.add_argument('--higher_threshold', type=float, default=0.9999999, help='Higher threshold for intensity adjustment in preprocessing.')
     parser.add_argument("--verbose", help="Default=False", action='store_true')
+    parser.add_argument('--smooth_DF', type=float, default=3.0, help='Smooth deformation field radius. Default = 3 px. Use 0.0 to avoid smoothing.')
 
     args = parser.parse_args()
 
@@ -473,8 +474,10 @@ def main():
     registered_image_np, displacement_fields_np = process_blocks(fixed_image_np, moving_image_np, args)
 
     # smooths vector field
-    smoothed_displacement_fields_np = smooth_vector_field(displacement_fields_np, sigma=5.0)
-
+    if args.smooth_DF>0.0:
+        smoothed_displacement_fields_np = smooth_vector_field(displacement_fields_np, sigma=args.smooth_DF)
+        displacement_fields_np = smoothed_displacement_fields_np
+        
     registered_image_sitk = to_sitk(registered_image_np, ref_img=fixed_image)
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
     displacement_field_sitk.CopyInformation(fixed_image)
@@ -498,7 +501,8 @@ def main():
     plot_deformation_intensity_xyz(displacement_fields_np, z_plane, png_path)
     plot_deformation_direction(displacement_fields_np, z_plane, png_path)
 
-    plot_deformation_intensity_xyz(smoothed_displacement_fields_np, z_plane, png_path.split('.')[0] + "_smoothed.png")
+    if args.smooth_DF>0.0:
+        plot_deformation_intensity_xyz(smoothed_displacement_fields_np, z_plane, png_path.split('.')[0] + "_smoothed")
 
     print('done')
 
