@@ -55,6 +55,7 @@ from astropy.stats import SigmaClip
 from tqdm import trange
 import matplotlib.colors as mcolors
 from scipy.ndimage import gaussian_filter
+from scipy.ndimage import zoom
 
 def reinterpolate_z(image_3d, z_range, mode='remove'):
     output = np.zeros((len(z_range), image_3d.shape[1], image_3d.shape[2]), dtype=image_3d.dtype)
@@ -196,6 +197,15 @@ def check_file_existence(reference, moving):
         print(f"Error: Moving image file '{moving}' does not exist.")
         sys.exit(1)
 
+def calculates_deformation(reference, moving, args, method = 'DEEDs'):
+    
+    if method=='DEEDs':
+        moved, vz, vy, vx = registration_imwarp_fields(reference, moving, alpha=args.alpha, levels=args.levels, verbose=args.verbose)
+
+    return moved, vz, vy, vx
+
+"""
+
 def preprocess_images(fixed_image_np, moving_image_np, args):
     
     print(f"$ Shifting image using: {args.shifts}")
@@ -214,13 +224,6 @@ def preprocess_images(fixed_image_np, moving_image_np, args):
     moving_image_np = preprocess_3d_image(moving_image_np, args.lower_threshold, args.higher_threshold)
     
     return fixed_image_np, moving_image_np
-
-def calculates_deformation(reference, moving, args, method = 'DEEDs'):
-    
-    if method=='DEEDs':
-        moved, vz, vy, vx = registration_imwarp_fields(reference, moving, alpha=args.alpha, levels=args.levels, verbose=args.verbose)
-
-    return moved, vz, vy, vx
 
 def process_blocks(fixed_image_np, moving_image_np, args):
     
@@ -257,7 +260,73 @@ def process_blocks(fixed_image_np, moving_image_np, args):
     displacement_fields_np = np.stack([vz_stitched, vy_stitched, vx_stitched], axis=-1)
     
     return registered_image_np, displacement_fields_np
+"""
 
+def preprocess_images(fixed_image_np, moving_image_np, args):
+    print(f"$ Shifting image using: {args.shifts}")
+    
+    shift_3d = np.zeros((3))
+    shift_3d[0], shift_3d[1], shift_3d[2] = args.shifts[2], args.shifts[0], args.shifts[1]
+    
+    moving_image_np = shift_image(moving_image_np, shift_3d)
+
+    # Apply binning if necessary
+    if args.binning_factor_xy > 1 or args.binning_factor_z > 1:
+        print(f"$ Applying binning to images: XY binning={args.binning_factor_xy}, Z binning={args.binning_factor_z}")
+        zoom_factors = [1/args.binning_factor_z, 1/args.binning_factor_xy, 1/args.binning_factor_xy]
+        fixed_image_np = zoom(fixed_image_np, zoom_factors, order=1)
+        moving_image_np = zoom(moving_image_np, zoom_factors, order=1)
+
+    print(f"$ Preprocessing images with z_binning={args.z_binning}, lower_threshold={args.lower_threshold}, higher_threshold={args.higher_threshold}")
+    fixed_image_np = preprocess_3d_image(fixed_image_np, args.lower_threshold, args.higher_threshold)
+    moving_image_np = preprocess_3d_image(moving_image_np, args.lower_threshold, args.higher_threshold)
+    
+    return fixed_image_np, moving_image_np
+
+def process_blocks(fixed_image_np, moving_image_np, args, original_shape=None):
+    # Original shape to be used for upsampling
+    if original_shape is None:
+        original_shape = fixed_image_np.shape
+
+    fixed_blocks, block_size, factors = split_image(fixed_image_np, args.factors)
+    moving_blocks, _, _ = split_image(moving_image_np, args.factors)
+    
+    print(f"Number of blocks: {len(fixed_blocks)}")
+    print_memory_usage("After splitting")
+    
+    registered_blocks = []
+    displacement_fields_vz = []
+    displacement_fields_vy = []
+    displacement_fields_vx = []
+    
+    for i, (fixed_block, moving_block) in enumerate(zip(fixed_blocks, moving_blocks)):
+        print(f"Processing block {i + 1}/{len(fixed_blocks)} of size {fixed_block.shape}")
+
+        moved, vz, vy, vx = calculates_deformation(fixed_block, moving_block, args, method='DEEDs')
+        registered_blocks.append(moved)
+        displacement_fields_vz.append(vz)
+        displacement_fields_vy.append(vy)
+        displacement_fields_vx.append(vx)
+        
+        print_memory_usage(f"After processing block {i + 1}")
+    
+    registered_image_np = stitch_blocks(registered_blocks, factors, block_size, fixed_image_np.shape)
+    vz_stitched = stitch_blocks(displacement_fields_vz, factors, block_size, fixed_image_np.shape)
+    vy_stitched = stitch_blocks(displacement_fields_vy, factors, block_size, fixed_image_np.shape)
+    vx_stitched = stitch_blocks(displacement_fields_vx, factors, block_size, fixed_image_np.shape)
+    
+    displacement_fields_np = np.stack([vz_stitched, vy_stitched, vx_stitched], axis=-1)
+
+    # Upsample displacement field back to the original shape if binning was applied
+    if args.binning_factor_xy > 1 or args.binning_factor_z > 1:
+        print(f"$ Upsampling the deformation field to match the original image dimensions.")
+        zoom_factors = [original_shape[0] / displacement_fields_np.shape[0],  # Z upsampling
+                        original_shape[1] / displacement_fields_np.shape[1],  # Y upsampling
+                        original_shape[2] / displacement_fields_np.shape[2]]  # X upsampling
+        displacement_fields_np = zoom(displacement_fields_np, zoom_factors + [1], order=1)
+
+    return registered_image_np, displacement_fields_np
+    
 def smooth_vector_field(vector_field, sigma=1.0):
     """
     Smooth a 3D vector field using a Gaussian filter.
@@ -441,6 +510,8 @@ def main():
     parser.add_argument('--z_binning', type=int, default=2, help='Reinterpolates the image by keeping only one every z_binning planes. Default is 2.')
     parser.add_argument('--lower_threshold', type=float, default=0.9, help='Lower threshold for intensity adjustment in preprocessing.')
     parser.add_argument('--higher_threshold', type=float, default=0.9999999, help='Higher threshold for intensity adjustment in preprocessing.')
+    parser.add_argument('--binning_factor_xy', type=int, default=1, help='Factor to downsample the XY dimensions before processing. Default is 1 (no binning).')
+    parser.add_argument('--binning_factor_z', type=int, default=1, help='Factor to downsample the Z dimension before processing. Default is 1 (no binning).')
     parser.add_argument("--verbose", help="Default=False", action='store_true')
     parser.add_argument('--smooth_DF', type=float, default=3.0, help='Smooth deformation field radius. Default = 3 px. Use 0.0 to avoid smoothing.')
 
@@ -458,6 +529,8 @@ def main():
 
     fixed_image_np_0 = to_numpy(fixed_image)
     moving_image_np_0 = to_numpy(moving_image)
+    
+    original_shape = fixed_image_np_0.shape
 
     print_memory_usage("Before preprocessing")
 
@@ -465,14 +538,10 @@ def main():
     fixed_image_np, moving_image_np = preprocess_images(fixed_image_np_0, moving_image_np_0, args)
     fixed_image = to_sitk(fixed_image_np)
 
-    # Plot the normalized images
-    png_path = os.path.join(args.png_folder, os.path.basename(args.output))
-    plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, png_path.split('.')[0] + "_normalized.png")
-
     # registers images
     print_memory_usage("Before processing blocks")
-    registered_image_np, displacement_fields_np = process_blocks(fixed_image_np, moving_image_np, args)
-
+    registered_image_np, displacement_fields_np = process_blocks(fixed_image_np, moving_image_np, args, original_shape=original_shape)
+    
     # smooths vector field
     if args.smooth_DF>0.0:
         smoothed_displacement_fields_np = smooth_vector_field(displacement_fields_np, sigma=args.smooth_DF)
