@@ -644,6 +644,7 @@ def main():
         displacement_fields_np = smoothed_displacement_fields_np
         
     registered_image_sitk = to_sitk(registered_image_np, ref_img=fixed_image)
+    print(f'$ -->size DF: {displacement_fields_np.shape}')
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
     displacement_field_sitk.CopyInformation(fixed_image)
 
