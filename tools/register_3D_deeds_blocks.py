@@ -143,6 +143,29 @@ def split_image(image_np, factors):
             blocks.append(block)
     return blocks, block_size, factors
 
+def resample_image(image, new_size, reference_image):
+    """
+    Resample the given image to a new size based on the reference image.
+
+    Parameters:
+    image : SimpleITK.Image
+        The input image to be resampled.
+    new_size : tuple of int
+        The new size for the image (in the format [width, height, depth]).
+    reference_image : SimpleITK.Image
+        The reference image to copy spacing, origin, and direction from.
+
+    Returns:
+    SimpleITK.Image
+        The resampled image with the new size.
+    """
+    resampler = sitk.ResampleImageFilter()
+    resampler.SetSize(new_size)
+    resampler.SetReferenceImage(reference_image)
+    resampler.SetInterpolator(sitk.sitkLinear)
+    
+    return resampler.Execute(image)
+
 def stitch_blocks(blocks, blocks_shape, block_size, original_shape, is_vector=False):
     if is_vector:
         stitched_image = np.zeros((original_shape[0], original_shape[1], original_shape[2], blocks[0].shape[-1]), dtype=blocks[0].dtype)
@@ -319,13 +342,24 @@ def process_blocks(fixed_image_np, moving_image_np, args, original_shape=None):
     displacement_fields_np = np.stack([vz_stitched, vy_stitched, vx_stitched], axis=-1)
 
     # Upsample displacement field back to the original shape if binning was applied
+    '''if args.binning_factor_xy > 1 or args.binning_factor_z > 1:
+        print(f"$ Upsampling the deformation field to match the original image dimensions.")
+        zoom_factors = [original_shape[0] / displacement_fields_np.shape[0],  # Z upsampling
+                        original_shape[1] / displacement_fields_np.shape[1],  # Y upsampling
+                        original_shape[2] / displacement_fields_np.shape[2]]  # X upsampling
+        displacement_fields_np = zoom(displacement_fields_np, zoom_factors + [1], order=1)
+    '''
+    # Upsample displacement field back to the original shape if binning was applied
     if args.binning_factor_xy > 1 or args.binning_factor_z > 1:
         print(f"$ Upsampling the deformation field to match the original image dimensions.")
         zoom_factors = [original_shape[0] / displacement_fields_np.shape[0],  # Z upsampling
                         original_shape[1] / displacement_fields_np.shape[1],  # Y upsampling
                         original_shape[2] / displacement_fields_np.shape[2]]  # X upsampling
         displacement_fields_np = zoom(displacement_fields_np, zoom_factors + [1], order=1)
-
+        
+        # Ensure the upsampled deformation field exactly matches the original shape
+        displacement_fields_np = displacement_fields_np[:original_shape[0], :original_shape[1], :original_shape[2], :]
+    
     return registered_image_np, displacement_fields_np
     
 def smooth_vector_field(vector_field, sigma=1.0):
