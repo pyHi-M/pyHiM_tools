@@ -636,6 +636,22 @@ def main():
 
     # registers images
     print_memory_usage("Before processing blocks")
+    registered_image_np, displacement_fields_np = process_blocks(fixed_image_np, moving_image_np, args)
+
+    # Check dimensions after upsampling
+    print(f"$ -->size DF: {displacement_fields_np.shape}")
+
+    # Ensure we create the displacement field with isVector=True to handle the vector field properly
+    displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
+    
+    # Copy information from the reference image to the displacement field
+    try:
+        displacement_field_sitk.CopyInformation(fixed_image)  # Copy spacing, origin, and direction
+    except RuntimeError as e:
+        print(f"Error during CopyInformation: {e}")
+        print(f"Displacement field size: {displacement_field_sitk.GetSize()}\nFixed image size: {fixed_image.GetSize()}")
+        
+    '''
     registered_image_np, displacement_fields_np = process_blocks(fixed_image_np, moving_image_np, args, original_shape=original_shape)
     
     # smooths vector field
@@ -647,7 +663,7 @@ def main():
     print(f'$ -->size DF: {displacement_fields_np.shape}')
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
     displacement_field_sitk.CopyInformation(fixed_image)
-
+'''
     # writes output registered image and displacement field
     write_image(registered_image_sitk, args.output)
     write_displacement_field(displacement_field_sitk, args.displacement_field, args.displacement_format)
