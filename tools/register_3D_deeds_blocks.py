@@ -307,6 +307,7 @@ def preprocess_images(fixed_image_np, moving_image_np, args):
     
     return fixed_image_np, moving_image_np
 
+"""
 def process_blocks(fixed_image_np, moving_image_np, args, original_shape=None):
     # Original shape to be used for upsampling
     if original_shape is None:
@@ -361,7 +362,61 @@ def process_blocks(fixed_image_np, moving_image_np, args, original_shape=None):
         displacement_fields_np = displacement_fields_np[:original_shape[0], :original_shape[1], :original_shape[2], :]
     
     return registered_image_np, displacement_fields_np
+
+"""
+
+def process_blocks(fixed_image_np, moving_image_np, args, original_shape=None):
+    # Original shape to be used for upsampling
+    if original_shape is None:
+        original_shape = fixed_image_np.shape
+
+    fixed_blocks, block_size, factors = split_image(fixed_image_np, args.factors)
+    moving_blocks, _, _ = split_image(moving_image_np, args.factors)
     
+    print(f"Number of blocks: {len(fixed_blocks)}")
+    print_memory_usage("After splitting")
+    
+    registered_blocks = []
+    displacement_fields_vz = []
+    displacement_fields_vy = []
+    displacement_fields_vx = []
+    
+    for i, (fixed_block, moving_block) in enumerate(zip(fixed_blocks, moving_blocks)):
+        print(f"Processing block {i + 1}/{len(fixed_blocks)} of size {fixed_block.shape}")
+
+        moved, vz, vy, vx = calculates_deformation(fixed_block, moving_block, args, method='DEEDs')
+        registered_blocks.append(moved)
+        displacement_fields_vz.append(vz)
+        displacement_fields_vy.append(vy)
+        displacement_fields_vx.append(vx)
+        
+        print_memory_usage(f"After processing block {i + 1}")
+    
+    registered_image_np = stitch_blocks(registered_blocks, factors, block_size, fixed_image_np.shape)
+    vz_stitched = stitch_blocks(displacement_fields_vz, factors, block_size, fixed_image_np.shape)
+    vy_stitched = stitch_blocks(displacement_fields_vy, factors, block_size, fixed_image_np.shape)
+    vx_stitched = stitch_blocks(displacement_fields_vx, factors, block_size, fixed_image_np.shape)
+    
+    displacement_fields_np = np.stack([vz_stitched, vy_stitched, vx_stitched], axis=-1)
+
+    # Print shape before upscaling
+    print(f"Displacement field shape before upsampling: {displacement_fields_np.shape}")
+    print(f"Original shape: {original_shape}")
+    
+    # Upsample displacement field back to the original shape if binning was applied
+    if args.binning_factor_xy > 1 or args.binning_factor_z > 1:
+        print(f"$ Upsampling the deformation field to match the original image dimensions.")
+        zoom_factors = [original_shape[0] / displacement_fields_np.shape[0],  # Z upsampling
+                        original_shape[1] / displacement_fields_np.shape[1],  # Y upsampling
+                        original_shape[2] / displacement_fields_np.shape[2]]  # X upsampling
+        print(f"Zoom factors: {zoom_factors}")
+        displacement_fields_np = zoom(displacement_fields_np, zoom_factors + [1], order=1)
+
+    # Print shape after upscaling
+    print(f"Displacement field shape after upsampling: {displacement_fields_np.shape}")
+
+    return registered_image_np, displacement_fields_np
+
 def smooth_vector_field(vector_field, sigma=1.0):
     """
     Smooth a 3D vector field using a Gaussian filter.
