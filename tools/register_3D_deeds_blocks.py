@@ -643,6 +643,7 @@ def main():
 
     # Ensure we create the displacement field with isVector=True to handle the vector field properly
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
+    registered_image_sitk = to_sitk(registered_image_np, ref_img=fixed_image)
     
     # Copy information from the reference image to the displacement field
     try:
@@ -659,7 +660,6 @@ def main():
         smoothed_displacement_fields_np = smooth_vector_field(displacement_fields_np, sigma=args.smooth_DF)
         displacement_fields_np = smoothed_displacement_fields_np
         
-    registered_image_sitk = to_sitk(registered_image_np, ref_img=fixed_image)
     print(f'$ -->size DF: {displacement_fields_np.shape}')
     displacement_field_sitk = sitk.GetImageFromArray(displacement_fields_np, isVector=True)
     displacement_field_sitk.CopyInformation(fixed_image)
