@@ -45,6 +45,7 @@ import numpy as np
 import psutil
 import h5py
 import os, sys
+import time
 import matplotlib.pyplot as plt
 from scipy.ndimage import shift as shift_image
 from deeds import registration_imwarp_fields
@@ -495,6 +496,7 @@ def plots_normalized_images(image_ref, image_ref_0, image_3d_0, image_3d, path_n
     print(f"$ saved: {path_name_normalized}")    
     fig1.savefig(path_name_normalized)
     
+    
 def main():
     parser = argparse.ArgumentParser(description="Align two 3D images using DEEDS with block-wise processing.")
     parser.add_argument('--reference', required=True, help='Path to the reference (fixed) image file.')
@@ -520,7 +522,8 @@ def main():
     print("This algorithm aligns two 3D volumes using the DEEDS method (deformable) based on optical flow.")
     print("This implementation breaks the images in user-defined blocks.")    
     print(f"$ Will save pngs at: {args.png_folder}")
-    
+    start_time = time.time()
+
     # loads images into memory
     check_file_existence(args.reference, args.moving)
 
@@ -537,6 +540,10 @@ def main():
     # pre-processes images
     fixed_image_np, moving_image_np = preprocess_images(fixed_image_np_0, moving_image_np_0, args)
     fixed_image = to_sitk(fixed_image_np)
+
+    # Plot the normalized images
+    png_path = os.path.join(args.png_folder, os.path.basename(args.output))
+    plots_normalized_images(fixed_image_np_0, fixed_image_np, moving_image_np_0, moving_image_np, png_path.split('.')[0] + "_normalized.png")
 
     # registers images
     print_memory_usage("Before processing blocks")
@@ -573,7 +580,9 @@ def main():
     if args.smooth_DF>0.0:
         plot_deformation_intensity_xyz(smoothed_displacement_fields_np, z_plane, png_path.split('.')[0] + "_smoothed")
 
-    print('done')
+    # Calculate the elapsed time
+    elapsed_time = time.time() - start_time
+    print(f'$ Finished in {elapsed_time} s')
 
 if __name__ == "__main__":
     main()
