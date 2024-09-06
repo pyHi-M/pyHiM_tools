@@ -187,7 +187,6 @@ def find_files(pattern, folder):
         print(f"! Could not find files to process in the folder: {folder}")
     else: 
         print(f"$ Found {len(files)} files to process")
-        # print("$ Found these files to process: \n{}".format('\n'.join(files)))
         
     return files
 
