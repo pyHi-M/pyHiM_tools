@@ -4,7 +4,7 @@
 Apply deformation corrections to localizations based on barcode identity and deformation fields.
 
 Usage:
-    apply_deformation_to_localizations.py --localizations localizations_3D_barcode_0.dat --deformation_folder /path/to/deformation_folder --output localizations_3D_barcode.dat
+    register_localizations_deeds.py --localizations localizations_3D_barcode_0.dat --deformation_folder /path/to/deformation_folder --output localizations_3D_barcode.dat
 
 Installation environment:
 
@@ -83,7 +83,7 @@ def main():
     parser.add_argument('--localizations', required=True, help='Path to the localizations file (Astropy format).')
     parser.add_argument('--deformation_folder', required=True, help='Path to the folder containing deformation fields.')
     parser.add_argument('--output', required=True, help='Path to the output file for corrected localizations.')
-    parser.add_argument('--zBinning', type=float, default=2.0, help='zBinning == pixelsize_z/pixelsize_xy. default=2.')
+    parser.add_argument('--zBinning', type=float, default=2.0, help='zBinning used in pyHiM. default=2.')
 
     args = parser.parse_args()
 
