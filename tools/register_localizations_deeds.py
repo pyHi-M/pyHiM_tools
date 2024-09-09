@@ -89,10 +89,10 @@ def main():
     parser.add_argument('--localizations', required=True, help='Path to the localizations file (Astropy format).')
     parser.add_argument('--deformation_folder', required=True, help='Path to the folder containing deformation fields.')
     parser.add_argument('--output', required=True, help='Path to the output file for corrected localizations.')
-    parser.add_argument('--channel', Default = 'ch00', help='Channel of the fiducial barcodes. Default = ch00')
+    parser.add_argument('--channel', default = 'ch00', help='Channel of the fiducial barcodes. Default = ch00')
     parser.add_argument('--zBinning', type=float, default=2.0, help='zBinning used in pyHiM. default=2.')
-    parser.add_argument('--toleranceDrift_XY', Default = 1.0 , type= float, help='Deformation field XY tolerance correction. Default = 1px')
-    parser.add_argument('--toleranceDrift_Z', Default = 3.0 , type= float, help='Deformation field Z tolerance correction. Default = 3px')    
+    parser.add_argument('--toleranceDrift_XY', default = 1.0 , type= float, help='Deformation field XY tolerance correction. Default = 1px')
+    parser.add_argument('--toleranceDrift_Z', default = 3.0 , type= float, help='Deformation field Z tolerance correction. Default = 3px')    
 
 
     args = parser.parse_args()
