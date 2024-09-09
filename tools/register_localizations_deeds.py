@@ -51,7 +51,7 @@ def read_deformation_field(file_path):
     displacement_array = sitk.GetArrayFromImage(displacement_field)
     return displacement_array
 
-def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2):
+def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2, toleranceDrift_XY=1.0, toleranceDrift_Z = 3.0):
     """Apply deformation corrections to localizations."""
     
     print(f"$ applying registrations to {len(localizations)} localizations")
@@ -64,13 +64,19 @@ def apply_deformation(localizations, deformation_field, barcode_id, z_binning=2)
             #print(f"$ Registering barcode: {barcode_number}")            
                 
             x, y, z = int(row['xcentroid']), int(row['ycentroid']), int(z_binning*row['zcentroid'])
+            
+            # checks that the pixel fits in the volume of the DF vector field
             if 0 <= x < deformation_field.shape[2] and 0 <= y < deformation_field.shape[1] and 0 <= z < deformation_field.shape[0]:
                 dz, dy, dx = deformation_field[z, y, x]
-                row['xcentroid'] += -dx
-                row['ycentroid'] += -dy
-                row['zcentroid'] += -dz/z_binning
-                #print(f"$ Correcting {row['Buid']} barcode: {row['Barcode #']}| rxyz-final = ({row['xcentroid']},{row['ycentroid']},{row['zcentroid']}, dxyz={dx},{dy},{dz})")
-                counter+=1
+                
+                # checks that the DF is not trying to correct more than the tolerance allows
+                if np.abs(dx)<toleranceDrift_XY and np.abs(dy)<toleranceDrift_XY and np.abs(dz)<toleranceDrift_Z:
+                    
+                    row['xcentroid'] += -dx
+                    row['ycentroid'] += -dy
+                    row['zcentroid'] += -dz/z_binning
+                    #print(f"$ Correcting {row['Buid']} barcode: {row['Barcode #']}| rxyz-final = ({row['xcentroid']},{row['ycentroid']},{row['zcentroid']}, dxyz={dx},{dy},{dz})")
+                    counter+=1
                 
     print(f"$ Corrected {counter} localizations.")
     
@@ -83,7 +89,11 @@ def main():
     parser.add_argument('--localizations', required=True, help='Path to the localizations file (Astropy format).')
     parser.add_argument('--deformation_folder', required=True, help='Path to the folder containing deformation fields.')
     parser.add_argument('--output', required=True, help='Path to the output file for corrected localizations.')
+    parser.add_argument('--channel', Default = 'ch00', help='Channel of the fiducial barcodes. Default = ch00')
     parser.add_argument('--zBinning', type=float, default=2.0, help='zBinning used in pyHiM. default=2.')
+    parser.add_argument('--toleranceDrift_XY', Default = 1.0 , type= float, help='Deformation field XY tolerance correction. Default = 1px')
+    parser.add_argument('--toleranceDrift_Z', Default = 3.0 , type= float, help='Deformation field Z tolerance correction. Default = 3px')    
+
 
     args = parser.parse_args()
 
@@ -91,12 +101,14 @@ def main():
     localizations = read_localizations(args.localizations)
 
     # Regular expression to match the deformation files
-    regex_pattern = r'scan_(?P<runNumber>[0-9]+)_(?P<cycle>RT[0-9]+)_(?P<roi>[0-9]+)_ROI_converted_decon_(?P<channel>ch00)_DF\.(tif|nii|nii.gz|h5|hdf5)'
+    #regex_pattern = r'scan_(?P<runNumber>[0-9]+)_(?P<cycle>RT[0-9]+)_(?P<roi>[0-9]+)_ROI_converted_decon_(?P<channel>ch00)_DF\.(tif|nii|nii.gz|h5|hdf5)'
+    regex_pattern = fr'scan_(?P<runNumber>[0-9]+)_(?P<cycle>RT[0-9]+)_(?P<roi>[0-9]+)_ROI_converted_decon_(?P<channel>{args.channel})_DF\.(tif|nii|nii.gz|h5|hdf5)'
 
     deformation_files = [f for f in os.listdir(args.deformation_folder) if re.match(regex_pattern, f)]
 
     if len(deformation_files) == 0:
         print(f"! Could not find deformation files in: {args.deformation_folder}")
+        return
     else: 
         print(f"$ Found these files to process: {deformation_files}")
         
@@ -109,14 +121,19 @@ def main():
             print(f"$ Analyzing file: {deformation_file}")
             print("$ Decoded barcode: {} channel of DF: {}".format(int(cycle.split('RT')[1]), channel))
             
-            if channel == 'ch00' and 'RT' in cycle:
+            if channel == args.channel and 'RT' in cycle:
                 barcode_id = int(cycle.split('RT')[1])
                 deformation_file_path = os.path.join(args.deformation_folder, deformation_file)
                 
                 if os.path.exists(deformation_file_path):
                     print(f"Applying deformation field: {deformation_file_path} for barcode ID: {barcode_id}")
                     deformation_field = read_deformation_field(deformation_file_path)
-                    localizations = apply_deformation(localizations, deformation_field, barcode_id, z_binning=args.zBinning)
+                    localizations = apply_deformation(localizations,\
+                        deformation_field,\
+                        barcode_id,\
+                        z_binning=args.zBinning,\
+                        toleranceDrift_XY=args.toleranceDrift_XY,\
+                        toleranceDrift_Z = args.toleranceDrift_Z)
                     
                 else:
                     print(f"Deformation field not found: {deformation_file_path}")
