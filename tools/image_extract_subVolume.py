@@ -29,6 +29,7 @@ from tifffile import imsave
 import matplotlib.pylab as plt
 import numpy as np
 import h5py
+import select
 
 def check_file_existence(filename):
     """Check if the reference and moving image files exist."""
@@ -59,7 +60,8 @@ def parseArguments():
     parser.add_argument("-F", "--input", help="Input file (TIFF or HDF5 format)", required=True)
     parser.add_argument("-Z", "--zoom", help="Zoom factor", type=int, default=10)
     parser.add_argument("-A", "--half", help="Blank out half of the image", action='store_true')
-    
+    parser.add_argument("--pipe", help="Inputs file list from stdin (pipe)", action="store_true")
+
     args = parser.parse_args()
 
     p = {}
@@ -69,14 +71,22 @@ def parseArguments():
     p["half"] = args.half
 
     print(f"$ Zoom factor: {p['zoom']}")
+    
+    p["files"] = []
+    if args.pipe:
+        p["pipe"] = True
+        if select.select([sys.stdin,], [], [], 0.0)[0]:
+            p["files"] = [line.rstrip("\n") for line in sys.stdin]
+        else:
+            print("Nothing in stdin")
+    else:
+        p["pipe"] = False
+        p["files"] = [p["input"]]
+
     return p
 
-if __name__ == "__main__":
-    # parameters
-    p = parseArguments()
-
+def run(p,file):
     zoom_factor = p["zoom"]
-    file = p["file"]
     
     # loads image files
     check_file_existence(file)
@@ -107,7 +117,6 @@ if __name__ == "__main__":
         for z in range(im_size_out[0]):
             im[z,:,:] = im[z,:,:] * template 
     
-  
     # saves output data
     output_file_ext = 'h5' if file.endswith('.h5') else 'tif'
     output_file = file.split('.')[0] + f'_zoom:{p["zoom"]}.{output_file_ext}'
@@ -118,3 +127,17 @@ if __name__ == "__main__":
     
     plt.imshow(np.sum(100*im, axis=0), cmap='Reds')
     plt.show()
+
+if __name__ == "__main__":
+    
+    # parameters
+    p = parseArguments()
+
+    if len(files) > 0 and files[0] is not None:
+        print("\n{} files to process= <{}>".format(len(files), "\n".join(map(str, files))))
+
+        for file in files:
+            run(p, file)
+    
+    else:
+        print("! Error: did not find any file to analyze. Please provide one using --input or --pipe.")
