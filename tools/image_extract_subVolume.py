@@ -132,7 +132,8 @@ if __name__ == "__main__":
     
     # parameters
     p = parseArguments()
-
+    files = p["files"]
+    
     if len(files) > 0 and files[0] is not None:
         print("\n{} files to process= <{}>".format(len(files), "\n".join(map(str, files))))
 
