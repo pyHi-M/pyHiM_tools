@@ -57,7 +57,7 @@ def write_image(image, file_path):
 def parseArguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("-F", "--input", help="Input file (TIFF or HDF5 format)", required=True)
+    parser.add_argument("-F", "--input", help="Input file (TIFF or HDF5 format)")
     parser.add_argument("-Z", "--zoom", help="Zoom factor", type=int, default=10)
     parser.add_argument("-A", "--half", help="Blank out half of the image", action='store_true')
     parser.add_argument("--pipe", help="Inputs file list from stdin (pipe)", action="store_true")
