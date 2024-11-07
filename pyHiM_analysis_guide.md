@@ -159,9 +159,11 @@ optional arguments:
 
 
 Finally run this script to process all tif files in a the folder holding the deinterleaved images:
+
 ```sh
-$ deconvolve_dw.py --gpu
+$ deconvolve_dw.py --gpu --tilesize 1024
 ```
+Note: tilesize needs to be adapted to the image size. For images acquired with the Hamamatsu sCMOS (2048x2048) a tilesize of `1024` works fine. However, for the Kinetix (3200x3200) we need to use instead `512`.
 
 Run this command in either lifou or lopevi.
 
