@@ -73,6 +73,11 @@ conda activate cellpose3
 pip install cellpose
 ```
 
+For 3D segmentation using the GUI, run:
+```
+python -m cellpose --Zstack
+```
+
 if you get an error regarding both Numpy 1.X and 2.X not being able to run at the same time like this:
 
 ```
