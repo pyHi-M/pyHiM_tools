@@ -60,6 +60,16 @@ def parseArguments():
     else:
         p["diam"] = 50
 
+    
+    """
+    vizgen uses these parameters for DAPI:
+    "diameter": 70,
+    "flow_threshold": 0.95,
+    "mask_threshold": -5.5,
+    "minimum_mask_size": 500
+    """
+
+
     p["files"] = []
     if args.pipe:
         p["pipe"] = True
