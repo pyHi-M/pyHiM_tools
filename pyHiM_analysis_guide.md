@@ -66,6 +66,36 @@ Please check guide [here](https://github.com/MouseLand/cellpose) for the most up
 
 The most convenient way is using a conda environment. 
 
+For cellpose 3:
+```
+conda create -n cellpose3 pytorch=1.8.2 cudatoolkit=10.2 -c pytorch-lts
+conda activate cellpose3
+pip install cellpose
+```
+
+if you get an error regarding both Numpy 1.X and 2.X not being able to run at the same time like this:
+
+```
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.0.1 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+```
+
+then apply this patch:
+
+```
+pip uninstall numpy
+pip install "numpy<2.0"
+```
+
+If you get an error regarding `GUI ERROR: No module named 'qtpy'` then run this:
+
+```
+pip install 'cellpose[gui]'
+```
+
+
 #### Installation Instructions with conda
 
 If you have an older cellpose environment you can remove it with 
