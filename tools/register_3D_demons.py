@@ -127,6 +127,7 @@ def convert_displacement_field_to_supported_type(displacement_field):
         components.append(component_image)
     return sitk.Compose(components)
 
+
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Align two 3D images using SimpleITK.")

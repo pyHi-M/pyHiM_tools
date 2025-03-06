@@ -42,8 +42,10 @@ def read_image(file_path):
     if file_path.endswith('.h5'):
         with h5py.File(file_path, 'r') as f:
             image = f['image'][:]
-    else:
+    elif file_path.endswith('.tif'):
         image = io.imread(file_path).squeeze()
+    elif file_path.endswith('.npy'):
+        image = np.load(file_path)
     return image
 
 def write_image(image, file_path):
@@ -57,7 +59,7 @@ def write_image(image, file_path):
 def parseArguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("-F", "--input", help="Input file (TIFF or HDF5 format)")
+    parser.add_argument("-F", "--input", help="Input file (TIF, NPY HDF5 format)")
     parser.add_argument("-Z", "--zoom", help="Zoom factor", type=int, default=10)
     parser.add_argument("-A", "--half", help="Blank out half of the image", action='store_true')
     parser.add_argument("--pipe", help="Inputs file list from stdin (pipe)", action="store_true")
@@ -81,7 +83,7 @@ def parseArguments():
             print("Nothing in stdin")
     else:
         p["pipe"] = False
-        p["files"] = [p["input"]]
+        p["files"] = [p["file"]]
 
     return p
 
