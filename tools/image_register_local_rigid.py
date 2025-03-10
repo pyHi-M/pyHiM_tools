@@ -198,9 +198,6 @@ def relabel_masks(labeled_img, connectivity=3, distance = 3):
     print(f"Original masks: {original_labels}\nNew labels: {new_labels}")
     return corrected_labels
 
-# functions to plot overlap between target and reference for a few masks
-
-
 
 # functions to make montage of reference+target for different masks -
 
@@ -338,17 +335,7 @@ def register_3d(
         shifted = target
         error=1
 
-    # Compute registration quality metric
-    ''' 
-    if metric == "ssim":
-        quality = structural_similarity(reference, shifted, data_range = data_range)
-    else:
-        quality = np.corrcoef(reference.ravel(), shifted.ravel())[0, 1]
-    '''
-
     return shifts, error, shifted
-
-
 
 def extract_mask_contour(mask):
     """
@@ -480,9 +467,6 @@ def plot_montage_projections(reference, target, masks, projection_axis=0, grid_s
 
             # Overlay mask contour in white (R, G, B)
             rgb_projection[mask_contour == 1] = [1, 1, 1]  # White for mask contour
-
-            # Determine coordinates to display
-            coord_x, coord_y = (x_c, y_c) if projection_axis == 0 else (z_c, y_c)
 
             # Plot projection
             ax.imshow(rgb_projection, origin='lower')
@@ -635,30 +619,3 @@ if __name__ == "__main__":
     execution_time = end_time - start_time  # Calculate elapsed time
 
     print(f"Execution Time: {execution_time:.2f} seconds")
-
-
-
-
-"""
-if __name__ == "__main__":
-
-    # load images
-
-    path = '/home/marcnol/data/flybrain/raw_images/testDataset_deformed_brains/'
-    path = '/home/marcnol/grey/users/marcnol/test_HiM/testDataset_deformed_brains/'
-    reference = path+ 'scan_005_RT2_043_ROI_ch00_zoom_4.tif' 
-    target = path+ 'scan_001_mask0_043_ROI_ch00_shifted_zoom_4.tif'
-    #segmented =  path+ 'scan_001_mask0_043_ROI_ch01_3Dmasks.npy'
-    #segmented =  path+ 'scan_001_mask0_043_ROI_ch01_3Dmasks_interpolated.npy'
-    segmented =  path+ 'scan_001_mask0_043_ROI_ch01_3Dmasks_interpolated_zoom_4.tif'
-
-    images_to_load = [reference,target,segmented]
-    im_ref, im_target, im_segmented = [load_image(x) for x in images_to_load]
-    
-    #save_image(im_segmented,segmented.split('.')[0]+'_interpolated.npy')
-
-    processed_masks = relabel_masks(im_segmented, connectivity=3, distance = 3)
-    #save_image(processed_masks,segmented.split('.')[0]+'_postprocessed.npy')
-    
-    plot_montage_projections(im_ref, im_target, processed_masks, do_shift=True, projection_axis=2, grid_size=10, bbox_size = (30, 30, 30), similarity_thresholds=[0.5, 0.75], shift_threshold = 5, output=path+'montage_corrected_ZX.png')
-"""
