@@ -37,27 +37,23 @@ pip install numpy scipy matplotlib scikit-image tqdm argparse
 
 """
 
-
-
 import os
 import sys
 import argparse
+import time
 
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io
-from skimage.metrics import structural_similarity
 from scipy.ndimage import zoom
 from scipy import ndimage
 from scipy.ndimage import label
 from skimage.measure import regionprops
-from skimage.metrics import structural_similarity as ssim  
 from skimage.metrics import normalized_mutual_information as mutual_information
 from skimage.metrics import normalized_root_mse as root_mse
 from skimage.metrics import structural_similarity
 from skimage.measure import regionprops, find_contours
 from skimage.registration import phase_cross_correlation
-
 
 def load_image(file_path):
     """
@@ -558,7 +554,7 @@ def parse_arguments():
         "--grid_size",
         type=int,
         choices=range(1, 21),
-        default=4,
+        default=10,
         help="Grid size for montage (1-20) (default: 4).",
     )
     parser.add_argument(
@@ -619,6 +615,8 @@ if __name__ == "__main__":
     # Relabel and process masks
     processed_masks = relabel_masks(im_segmented, connectivity=3, distance=3)
 
+    start_time = time.time()  # Start timer
+
     # Generate montage
     plot_montage_projections(
         im_ref,
@@ -632,6 +630,13 @@ if __name__ == "__main__":
         shift_threshold=args.shift_threshold,
         output=args.output,
     )
+    
+    end_time = time.time()  # End timer
+    execution_time = end_time - start_time  # Calculate elapsed time
+
+    print(f"Execution Time: {execution_time:.2f} seconds")
+
+
 
 
 """
