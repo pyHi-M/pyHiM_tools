@@ -22,6 +22,18 @@ Features:
 - **Customizable CLI:** Fully configurable via command-line arguments.
 
 Example:
+
+CLI
+image_register_local_rigid.py --reference scan_005_RT2_043_ROI_ch00_zoom_4.tif 
+    --projection_axis 0 1 
+    --target scan_001_mask0_043_ROI_ch00_shifted_zoom_4.tif 
+    --mask scan_001_mask0_043_ROI_ch01_3Dmasks_interpolated_zoom_4.tif 
+    --do_shift 
+    --output montage_corrected_XY3 
+    --grid_size 20
+
+
+API
 ```python
 from image_registration import ImageRegistration
 
@@ -637,15 +649,8 @@ class ImageRegistration:
             # Adjust spacing and show figure
             plt.tight_layout()
             
-            # Set projection name based on axis
-            if axis == 0:
-                projection_name = "XY" 
-            elif axis == 1:
-                projection_name = "ZX" 
-            elif axis == 2:
-                projection_name = "ZY" 
                 
-            plt.suptitle(f"{projection_name} Projection Montage | Page {fig_idx + 1}", fontsize=14)
+            plt.suptitle(f"Axis:{axis} Projection Montage | Page {fig_idx + 1}", fontsize=14)
 
             # Save before plt.show()
             save_path = f"{self.output.split('.')[0]}_axis{axis}_{fig_idx}.{self.output.split('.')[1]}"
