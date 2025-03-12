@@ -8,7 +8,6 @@ import os
 import uuid
 import numpy as np
 import h5py
-import tifffile
 from skimage.measure import regionprops_table
 from scipy import ndimage
 from tqdm import tqdm
@@ -209,7 +208,82 @@ class MaskManager:
         mask = labeled_image == label
         return self.add_mask_from_array(mask, label, mask_uuid)
 
+    def load_from_image(self, labeled_image, max_masks_per_chunk=2000):
+        """ Load a 3D labeled image and extract masks efficiently in dynamically sized chunks. """
 
+        if labeled_image.ndim != 3:
+            if labeled_image.ndim == 2:
+                labeled_image = labeled_image.reshape(1, *labeled_image.shape)  # Convert 2D to 3D
+            else:
+                raise ValueError(f"Invalid dimensions: {labeled_image.shape}. Expected a 3D array.")
+
+        self.shape = labeled_image.shape
+        print(f"Read image file with shape: {self.shape}")
+
+        self.masks = {}
+        self.labeled_image = np.zeros(self.shape, dtype=np.int32)
+
+        unique_labels = np.unique(labeled_image)
+        unique_labels = unique_labels[unique_labels != 0]  # Exclude background
+        total_labels = len(unique_labels)
+
+        if total_labels == 0:
+            print("No masks found in the image.")
+            return {}
+
+        # Determine the optimal number of chunks
+        num_chunks = max(1, total_labels // max_masks_per_chunk)
+        chunk_size = max(1, total_labels // num_chunks)  # Adjusted chunk size
+        print(f"Total masks: {total_labels}, Processing in {num_chunks} chunks (~{chunk_size} masks per chunk).")
+
+        label_to_uuid = {}
+
+        # Process image in chunks based on mask numbers
+        for i in range(0, total_labels, chunk_size):
+            label_subset = unique_labels[i : i + chunk_size]
+
+            print(f"Processing chunk {i//chunk_size + 1}/{num_chunks}...")
+
+            # Create a temporary labeled image with only these labels
+            temp_image = np.isin(labeled_image, label_subset) * labeled_image
+
+            # Compute properties in one batch
+            properties = regionprops_table(
+                temp_image,
+                properties=('label', 'coords', 'centroid', 'equivalent_diameter_area')
+            )
+
+            # Store results
+            for j in range(len(properties['label'])):
+                label = properties['label'][j]
+                coords = properties['coords'][j]  # (N, 3) array of (z, y, x)
+                diameter = properties['equivalent_diameter_area'][j]
+
+                mask_uuid = str(uuid.uuid4())
+
+                center_of_mass = (
+                    properties['centroid-2'][j],  # x
+                    properties['centroid-1'][j],  # y
+                    properties['centroid-0'][j]   # z
+                )
+
+                self.masks[mask_uuid] = {
+                    'label': label,
+                    'coordinates': coords[:, [2, 1, 0]],  # Convert (z, y, x) -> (x, y, z)
+                    'center_of_mass': tuple(map(float, center_of_mass)),
+                    'diameter': float(diameter),
+                    'voxel_count': len(coords),
+                }
+
+                # Vectorized update to labeled image
+                x, y, z = coords[:, 2], coords[:, 1], coords[:, 0]
+                self.labeled_image[z, y, x] = label
+
+                label_to_uuid[label] = mask_uuid
+
+        print(f"Successfully processed {len(label_to_uuid)} masks from image")
+        return label_to_uuid
+    ''' 
     def load_from_image(self, labeled_image):
         """
         Load a 3D labeled image from a TIF or NPY file and extract all masks into the manager.
@@ -285,7 +359,7 @@ class MaskManager:
 
         print(f"Successfully processed {len(label_to_uuid)} masks from image")
         return label_to_uuid
-
+    '''
 
     
     def extract_masks_from_labeled_image(self, labeled_image, background=0):
