@@ -55,8 +55,10 @@ reg.run()
 ```
 
 Installation:
-
-pip install numpy scipy matplotlib scikit-image tqdm argparse joblib
+mb create -n local_align
+mb install numpy scipy matplotlib scikit-image tqdm 
+mb install cupy
+mb install argparse joblib
 """
 
 import os
@@ -80,6 +82,10 @@ from skimage.metrics import structural_similarity
 from skimage.measure import regionprops, find_contours
 from skimage.registration import phase_cross_correlation
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+from mask_manager import MaskManager
 
 class ImageRegistration:
     """
@@ -254,6 +260,11 @@ class ImageRegistration:
                 # Load TIFF image
                 print(f"Loading TIFF image from {file_path}")
                 image = io.imread(file_path)
+            elif file_ext in ['.hdf5', '.HDF5']:
+                # Load HDF5 image
+                print(f"Loading HDF5 image from {file_path}")
+                labeled_masks_hdf5 = MaskManager(filename=file_path)
+                image = labeled_masks_hdf5.labeled_image
             else:
                 # Default to skimage.io.imread for other formats
                 print(f"Loading image from {file_path} using generic loader")
@@ -571,7 +582,7 @@ class ImageRegistration:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
             print(f"Saved: {save_path}")
 
-            plt.show()
+            #plt.show()
 
 
 def parse_arguments():
