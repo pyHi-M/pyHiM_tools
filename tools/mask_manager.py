@@ -112,7 +112,13 @@ class MaskManager:
                 raise ValueError(f"Unsupported file format: {file_ext}. Only .hdf5 is supported.")
 
         elif image is not None:
-            #file_ext == '.tif' or file_ext == '.tiff' or file_ext == '.npy':
+            # Print original datatype
+            print(f"Original datatype/size: {image.dtype}/{image.size * image.itemsize / (1024*1024):.2f} MB")
+            
+            # Convert to uint32
+            image = image.astype(np.uint32)
+            print(f"Original datatype/size: {image.dtype}/{image.size * image.itemsize / (1024*1024):.2f} MB")
+            
             self.load_from_image(image)
 
         elif shape:
@@ -208,9 +214,22 @@ class MaskManager:
         mask = labeled_image == label
         return self.add_mask_from_array(mask, label, mask_uuid)
 
-    def load_from_image(self, labeled_image, max_masks_per_chunk=2000):
-        """ Load a 3D labeled image and extract masks efficiently in dynamically sized chunks. """
+    def load_from_image(self, labeled_image, max_masks_per_chunk=1000):
+        """
+        Load a 3D labeled image and extract masks efficiently in dynamically sized chunks. 
 
+        Parameters:
+        -----------
+        image: numpy array
+            3D labeled image.
+        max_masks_per_chunk: numpy integer
+            number of masks to take for each chunk in batch processing.
+
+        Returns:
+        --------
+        dict
+            Dictionary mapping labels to UUIDs.
+        """
         if labeled_image.ndim != 3:
             if labeled_image.ndim == 2:
                 labeled_image = labeled_image.reshape(1, *labeled_image.shape)  # Convert 2D to 3D
