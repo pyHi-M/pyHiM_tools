@@ -112,7 +112,13 @@ class MaskManager:
                 raise ValueError(f"Unsupported file format: {file_ext}. Only .hdf5 is supported.")
 
         elif image is not None:
-            #file_ext == '.tif' or file_ext == '.tiff' or file_ext == '.npy':
+            # Print original datatype
+            print(f"Original datatype/size: {image.dtype}/{image.size * image.itemsize / (1024*1024):.2f} MB")
+            
+            # Convert to uint32
+            image = image.astype(np.uint32)
+            print(f"Original datatype/size: {image.dtype}/{image.size * image.itemsize / (1024*1024):.2f} MB")
+            
             self.load_from_image(image)
 
         elif shape:
