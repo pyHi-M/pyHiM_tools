@@ -1,0 +1,49 @@
+# ============================================================================
+# DAPI image registration configuration
+# ============================================================================
+#
+# This file configures the registration of a TARGET DAPI stack onto a
+# REFERENCE DAPI stack.
+#
+# The reference remains fixed. Rotation, translation, optional X/Y zoom,
+# and optional Z displacement are applied to the target.
+#
+# Each folder/template combination must match exactly one TIFF file.
+# Test the patterns before running the analysis when several files are present.
+#
+# Channel numbers use zero-based Python indexing:
+#   0 = first channel
+#   1 = second channel
+#   2 = third channel
+#
+# XY shifts are reported in pixels of the original image.
+# Rotation is reported in degrees.
+# Z shift is reported in image planes.
+# ============================================================================
+
+
+registration_parameters :
+  downsizing_power: 1
+  gaussian_filter_size: 10
+  angles_range: [-20, 20]
+  apply_zoom: False
+  zoom_range: [1, 1.1]
+  verbose: False
+
+reference_DAPI_folder : "/mnt/grey/DATA/rawData_2024/Experiment_109_Sahar_241105/DAPI_lamina_before_epi"
+template_reference_DAPI_file : "*008_ROI.tif"
+number_channel_reference_stack: 2
+reference_channel: 1
+
+target_DAPI_folder : "/mnt/grey/DATA/rawData_2024/Experiment_109_Sahar_241105/DAPI_lamina_after_confocal"
+template_target_DAPI_file : "*008_ROI.tif"
+number_channel_target_stack: 2
+target_channel : 1
+
+
+
+## Indicate the folder where the analysis results will be saved
+## ------------------------------------------------------------
+dest_root_folder : "/mnt/grey/DATA/rawData_2024/Experiment_109_Sahar_241105/test_registration"
+dest_analysis_folder : "test"
+overwrite_existing_file : True
